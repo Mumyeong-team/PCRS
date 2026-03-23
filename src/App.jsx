@@ -1,4 +1,4 @@
-import "./styles.css";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Capture from "./pages/Capture";

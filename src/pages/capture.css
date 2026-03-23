@@ -1,0 +1,374 @@
+.capture-page {
+  min-height: 100vh;
+  background: #f5f1ea;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.capture-browser {
+  width: 100%;
+  max-width: 1280px;
+  min-height: 860px;
+  background: #f7f3ec;
+  border: 1px solid #ddd3c8;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 28px 60px rgba(93, 70, 45, 0.12);
+}
+
+.capture-browser-bar {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  background: #f1ece4;
+  border-bottom: 1px solid #ddd3c8;
+}
+
+.capture-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.capture-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d4ccc2;
+}
+
+.capture-address {
+  min-width: 220px;
+  height: 28px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #f8f5ef;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #b29f87;
+}
+
+.capture-stage {
+  position: relative;
+  min-height: 818px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8eef0 0%, #edf4f8 48%, #f8f4eb 100%);
+}
+
+.capture-home-btn {
+  position: absolute;
+  top: 32px;
+  left: 36px;
+  z-index: 5;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #6b6257;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(70, 60, 50, 0.08);
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.capture-home-btn:hover {
+  transform: translateY(-1px);
+}
+
+.capture-bg {
+  position: absolute;
+  pointer-events: none;
+}
+
+.shape-pink {
+  width: 220px;
+  height: 220px;
+  left: 90px;
+  top: 110px;
+  background: rgba(248, 223, 230, 0.7);
+  border-radius: 34px;
+  transform: rotate(-8deg);
+}
+
+.shape-blue {
+  width: 300px;
+  height: 300px;
+  right: 120px;
+  top: 95px;
+  background: rgba(218, 236, 246, 0.72);
+  clip-path: polygon(12% 12%, 88% 0%, 100% 38%, 88% 90%, 18% 100%, 0% 52%);
+}
+
+.shape-number {
+  font-size: 120px;
+  color: rgba(242, 231, 179, 0.5);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.shape-number.one {
+  right: 115px;
+  top: 88px;
+}
+
+.shape-number.two {
+  right: 100px;
+  top: 235px;
+}
+
+.capture-center-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 760px;
+  height: 520px;
+  transform: translate(-50%, -50%);
+  border-radius: 38px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 40px rgba(110, 140, 120, 0.12);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.capture-inner-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.capture-camera-area {
+  position: relative;
+  flex: 1;
+  border-radius: 22px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture-bottom-panel {
+  height: 96px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.camera-video,
+.captured-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #eef2f3;
+}
+
+.camera-error-box {
+  color: #b05f58;
+  background: rgba(255, 245, 245, 0.95);
+  padding: 18px 20px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  width: 82%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.countdown-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 96px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 35px rgba(80, 70, 60, 0.08);
+}
+
+.capture-control-card {
+  position: absolute;
+  left: 68px;
+  bottom: 78px;
+  width: 190px;
+  border-radius: 24px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px rgba(80, 70, 60, 0.12);
+}
+
+.action-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.light-btn {
+  background: #ffffff;
+  color: #7b756d;
+}
+
+.mint-btn {
+  background: linear-gradient(135deg, #d8f3e8, #c8efe2);
+  color: #6e8f86;
+}
+
+.white-btn {
+  background: #ffffff;
+  color: #6b6257;
+}
+
+.capture-guide-card {
+  position: absolute;
+  right: 70px;
+  bottom: 78px;
+  width: 280px;
+  border-radius: 24px;
+  padding: 22px 22px 18px;
+  color: #706a62;
+}
+
+.capture-guide-card h3 {
+  margin: 0 0 14px;
+  font-size: 26px;
+  color: #45413c;
+}
+
+.capture-guide-card ul {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.capture-guide-card li {
+  margin-bottom: 12px;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+@media (max-width: 1200px) {
+  .capture-browser {
+    min-height: 980px;
+  }
+
+  .capture-stage {
+    min-height: 938px;
+  }
+
+  .capture-center-box {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin: 140px auto 0;
+    width: min(92%, 760px);
+    height: 500px;
+  }
+
+  .capture-control-card {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    margin: 36px auto 0;
+  }
+
+  .capture-guide-card {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    margin: 28px auto 48px;
+    width: min(360px, calc(100% - 48px));
+  }
+
+  .shape-blue,
+  .shape-number.one,
+  .shape-number.two {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .capture-page {
+    padding: 16px;
+  }
+
+  .capture-browser {
+    min-height: auto;
+  }
+
+  .capture-stage {
+    min-height: auto;
+    padding-bottom: 40px;
+  }
+
+  .capture-home-btn {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin: 20px 0 0 20px;
+  }
+
+  .capture-center-box {
+    width: calc(100% - 28px);
+    height: 420px;
+    margin-top: 24px;
+  }
+
+  .capture-bottom-panel {
+    height: 72px;
+  }
+
+  .capture-control-card {
+    width: calc(100% - 40px);
+  }
+
+  .capture-guide-card {
+    width: calc(100% - 40px);
+  }
+
+  .shape-pink {
+    left: 24px;
+    top: 92px;
+    width: 120px;
+    height: 120px;
+  }
+
+  .countdown-overlay {
+    font-size: 72px;
+  }
+}

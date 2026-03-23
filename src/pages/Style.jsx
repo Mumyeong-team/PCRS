@@ -1,51 +1,58 @@
-
-// src/pages/Style.jsx
-import { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { analyze } from "../mock/analysisMock";
+import "./style.css";
 
-export default function Style() {
+function Style() {
   const nav = useNavigate();
-  const { capturedImage, analysis, setAnalysis } = useApp();
+  const { capturedImage, analysis } = useApp();
 
-  // 분석 정보가 없으면 여기서도 1회 세팅(직접 진입 대비)
-  useEffect(() => {
-    if (!analysis) {
-      setAnalysis(analyze(capturedImage));
-    }
-  }, [analysis, setAnalysis, capturedImage]);
-
-  if (!analysis) {
-    return (
-      <div className="page">
-        <h2>분석 중...</h2>
-      </div>
-    );
-  }
+  const image =
+    capturedImage || "https://via.placeholder.com/200x300?text=User";
 
   return (
-    <div className="page">
-      <h2>스타일 추천</h2>
-      <p>
-        <b>체형:</b> {analysis.bodyType}
-      </p>
-      <p>
-        <b>Tip:</b> {analysis.tips}
-      </p>
+    <div className="style-page">
+      <div className="style-container">
+        <button className="back-btn" onClick={() => nav("/services")}>
+          ← 뒤로가기
+        </button>
 
-      <div className="cards">
-        {analysis.styles.map((s) => (
-          <div key={s.name} className="card">
-            <h4>{s.name}</h4>
-            <p>{s.notes}</p>
+        <div className="style-top">
+          <div className="style-image">
+            <img src={image} alt="user" />
           </div>
-        ))}
-      </div>
 
-      <div style={{ marginTop: 12 }}>
-        <button onClick={() => nav("/services")}>← 서비스로 돌아가기</button>
+          <div className="style-summary">
+            <h2>추천 스타일</h2>
+            <p>
+              {analysis?.tips ||
+                "체형에 맞는 스타일을 추천합니다. 밝은 톤 하의와 여유 있는 상의를 추천합니다."}
+            </p>
+          </div>
+        </div>
+
+        <div className="style-grid">
+          <div className="style-card">
+            <img src="https://via.placeholder.com/200x250" alt="style1" />
+            <p>캐주얼 스타일</p>
+            <button>선택</button>
+          </div>
+
+          <div className="style-card">
+            <img src="https://via.placeholder.com/200x250" alt="style2" />
+            <p>미니멀 스타일</p>
+            <button>선택</button>
+          </div>
+
+          <div className="style-card">
+            <img src="https://via.placeholder.com/200x250" alt="style3" />
+            <p>세미포멀 스타일</p>
+            <button>선택</button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+export default Style;
