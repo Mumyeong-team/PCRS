@@ -1,1 +1,14 @@
-
+{
+  "shoulder_width": 0.25875137516210717,
+  "waist_width": 0.13454376391997533,
+  "arm_length": 0.23476876116162096,
+  "upper_body_length": 0.26133597555937044,
+  "lower_body_length": 0.289429312721081,
+  "leg_length_avg": 0.29017197214585455,
+  "upper_lower_ratio": 0.9029354114219117,
+  "shoulder_waist_ratio": 1.923176278285248,
+  "source_files": {
+    "front": "front.json",
+    "side": "side.json"
+  }
+}
