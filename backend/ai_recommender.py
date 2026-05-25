@@ -131,51 +131,98 @@ def build_system_prompt() -> str:
         '  "styling_tip": "전체 스타일링 팁을 1~2문장으로 정리"\n'
         "}\n\n"
         "언어: 반드시 한국어로 작성하세요.\n"
-        "길이: 각 필드는 1~3문장, 실제 서비스에 적합한 자연스러운 문체로 작성하세요."
+        "길이: 각 필드는 1~3문장, 실제 서비스에 적합한 자연스러운 문체로 작성하세요.\n"
+        "설명은 추천 아이템을 단순 나열하지 말고, 왜 이 사용자에게 적합한지 차이를 드러내세요.\n"
+        "같은 body_type이라도 build_type과 preferred_style이 다르면 설명의 핵심 포인트를 분명히 다르게 작성하세요.\n"
+        "각 필드는 짧고 선명하게 작성하고, 중복 표현은 줄이세요."
     )
 
 
-def build_user_prompt(classification: dict, recommendation: dict) -> str:
+def build_user_prompt(
+    classification: dict,
+    recommendation: dict,
+    user_input: dict | None = None,
+) -> str:
     """
-    분류 결과와 추천 결과를 AI에게 전달하는 유저 메시지를 생성합니다.
-
-    영문 레이블을 한국어로 변환해 전달합니다.
-    영문 코드를 그대로 넘기면 AI가 내부 지식으로 재해석할 위험이 있습니다.
-
-    Args:
-        classification (dict): classify_all() 반환값
-        recommendation (dict): recommend_style() 반환값
-
-    Returns:
-        str: 유저 프롬프트 문자열
+    분류 결과 + 추천 결과 + 사용자 입력값을 AI에게 전달하는 유저 프롬프트 생성
     """
-    gender_kor     = GENDER_KOR.get(classification.get("gender", ""),     "성별 미지정")
-    body_type_kor  = BODY_TYPE_KOR.get(classification.get("body_type",  ""),
-                                       classification.get("body_type",  ""))
-    proportion_kor = PROPORTION_KOR.get(classification.get("proportion", ""),
-                                        classification.get("proportion", ""))
-    limb_kor       = LIMB_KOR.get(classification.get("limb_type", ""),
-                                  classification.get("limb_type", ""))
 
-    top_items    = ", ".join(recommendation.get("top",    []))
+    if user_input is None:
+        user_input = {}
+
+    gender_kor = GENDER_KOR.get(
+        classification.get("gender", ""),
+        "성별 미지정"
+    )
+
+    body_type_kor = BODY_TYPE_KOR.get(
+        classification.get("body_type", ""),
+        classification.get("body_type", "")
+    )
+
+    proportion_kor = PROPORTION_KOR.get(
+        classification.get("proportion", ""),
+        classification.get("proportion", "")
+    )
+
+    limb_kor = LIMB_KOR.get(
+        classification.get("limb_type", ""),
+        classification.get("limb_type", "")
+    )
+
+    # 새로 추가된 build_type
+    build_type = classification.get("build_type", "regular_build")
+
+    # build_type 한국어 설명
+    BUILD_TYPE_KOR = {
+        "slim_build": "마른 체격",
+        "regular_build": "보통 체격",
+        "stocky_build": "체격감 있는 체형",
+    }
+
+    build_type_kor = BUILD_TYPE_KOR.get(build_type, build_type)
+
+    # 추천 결과 정리
+    top_items = ", ".join(recommendation.get("top", []))
     bottom_items = ", ".join(recommendation.get("bottom", []))
-    avoid_items  = ", ".join(recommendation.get("avoid",  []))
-    fit_desc     = recommendation.get("fit",       "")
-    extra_tip    = recommendation.get("extra_tip", "")
+    avoid_items = ", ".join(recommendation.get("avoid", []))
+    fit_desc = recommendation.get("fit", "")
+    extra_tip = recommendation.get("extra_tip", "")
+
+    # 사용자 입력값
+    height_cm = user_input.get("height_cm", "")
+    weight_kg = user_input.get("weight_kg", "")
+    preferred_fit = user_input.get("preferred_fit", "")
+    preferred_style = user_input.get("preferred_style", "")
+    top_size = user_input.get("top_size", "")
+    bottom_size = user_input.get("bottom_size", "")
 
     return (
         "[체형 분류 결과]\n"
         f"- 성별: {gender_kor}\n"
         f"- 체형: {body_type_kor}\n"
         f"- 상하체 비율: {proportion_kor}\n"
-        f"- 팔 길이 유형: {limb_kor}\n\n"
+        f"- 팔 길이 유형: {limb_kor}\n"
+        f"- 체격감: {build_type_kor}\n\n"
+
         "[rule-based 스타일 추천 결과]\n"
         f"- 추천 상의: {top_items}\n"
         f"- 추천 하의: {bottom_items}\n"
         f"- 핏 방향: {fit_desc}\n"
         f"- 피해야 할 아이템: {avoid_items}\n"
         f"- 추가 팁: {extra_tip}\n\n"
-        "위 정보만을 바탕으로 지정된 JSON 형식의 스타일 설명을 작성해주세요."
+
+        "[추가 사용자 정보]\n"
+        f"- 키: {height_cm}\n"
+        f"- 몸무게: {weight_kg}\n"
+        f"- 상의 사이즈: {top_size}\n"
+        f"- 하의 사이즈: {bottom_size}\n"
+        f"- 선호 핏: {preferred_fit}\n"
+        f"- 선호 스타일: {preferred_style}\n\n"
+
+        "위 정보만을 바탕으로 지정된 JSON 형식의 스타일 설명을 작성해주세요.\n"
+        "반드시 체형 분류 결과뿐 아니라 체격감(build_type)과 선호 핏/스타일을 설명에 반영하세요.\n"
+        "특히 같은 body_type이어도 build_type이 다르면 추천 이유와 주의점을 다르게 설명하세요."
     )
 
 
@@ -361,6 +408,7 @@ def recommend_with_ai(
     classification: dict,
     recommendation: dict,
     provider: str = "openai",
+    user_input: dict | None = None,
 ) -> dict:
     """
     rule-based 추천 결과를 AI API에 전달해 자연스러운 스타일 설명을 생성합니다.
@@ -412,7 +460,7 @@ def recommend_with_ai(
 
     # 프롬프트 생성
     system_prompt = build_system_prompt()
-    user_prompt   = build_user_prompt(classification, recommendation)
+    user_prompt = build_user_prompt(classification, recommendation, user_input)
 
     # ── 1단계: API 호출 ──────────────────────────
     try:

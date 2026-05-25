@@ -234,59 +234,147 @@ LIMB_TIPS: dict = {
 # 스타일 추천 함수
 # ────────────────────────────────────────────────
 
-def recommend_style(classification: dict) -> dict:
+def recommend_style(classification: dict, user_input: dict | None = None) -> dict:
     """
-    분류 결과를 받아 스타일 추천 딕셔너리를 반환합니다.
-
-    탐색 우선순위:
-      1. STYLE_RULES[gender][body_type][proportion]  — 가장 구체적인 규칙
-      2. STYLE_RULES[gender][body_type]["default"]   — proportion 세부 규칙 없을 때
-      3. STYLE_RULES["unspecified"][body_type]["default"]  — gender 매핑 실패 시
-      4. STYLE_RULES["unspecified"]["balanced"]["default"] — 최종 폴백
-
-    extra_tip은 추천 규칙 팁 + proportion 팁 + limb 팁을
-    줄바꿈(\n)으로 연결합니다.
-
-    Args:
-        classification (dict): classify_all()의 반환값
-
-    Returns:
-        dict: {
-            "top"      : list[str],
-            "bottom"   : list[str],
-            "fit"      : str,
-            "avoid"    : list[str],
-            "extra_tip": str,
-        }
+    체형 분류 + 사용자 선호를 바탕으로 스타일 추천 반환
+    최종 튜닝 버전:
+    - build_type 반영
+    - preferred_style 우선순위 강화
+    - preferred_fit 반영
+    - 추천 개수 제한
+    - 너무 많이 누적되지 않게 핵심 아이템만 선택
     """
-    gender     = classification.get("gender",     "unspecified")
-    body_type  = classification.get("body_type",  "balanced")
+    if user_input is None:
+        user_input = {}
+
+    gender = classification.get("gender", "unspecified")
+    body_type = classification.get("body_type", "balanced")
     proportion = classification.get("proportion", "balanced_proportion")
-    limb_type  = classification.get("limb_type",  "balanced_limbs")
+    build_type = classification.get("build_type", "regular_build")
 
-    # ── gender 폴백 ──
-    gender_rules = STYLE_RULES.get(gender) or STYLE_RULES["unspecified"]
+    preferred_fit = (user_input.get("preferred_fit") or "").strip().lower()
+    preferred_style = (user_input.get("preferred_style") or "").strip().lower()
 
-    # ── body_type 폴백 ──
-    body_rules = gender_rules.get(body_type) or gender_rules.get("balanced", {})
+    # ------------------------------------------------
+    # 1차 기본 추천 선택
+    # ------------------------------------------------
+    gender_rules = STYLE_RULES.get(gender, STYLE_RULES["male"])
+    body_rules = gender_rules.get(body_type, gender_rules["balanced"])
+    selected = body_rules.get(proportion, body_rules.get("default"))
 
-    # ── proportion 세부 규칙 → 없으면 default ──
-    rule = body_rules.get(proportion) or body_rules.get("default", {})
-
-    # ── 기본 추천 복사 ──
-    recommendation = {
-        "top"      : list(rule.get("top",    [])),
-        "bottom"   : list(rule.get("bottom", [])),
-        "fit"      : rule.get("fit",    ""),
-        "avoid"    : list(rule.get("avoid",  [])),
-        "extra_tip": rule.get("extra_tip", ""),
+    result = {
+        "top": list(selected["top"]),
+        "bottom": list(selected["bottom"]),
+        "fit": selected["fit"],
+        "avoid": list(selected["avoid"]),
+        "extra_tip": selected["extra_tip"],
     }
 
-    # ── 각 팁을 줄바꿈으로 자연스럽게 연결 ──
-    proportion_tip = PROPORTION_TIPS.get(proportion, "")
-    limb_tip       = LIMB_TIPS.get(limb_type, "")
+    # ------------------------------------------------
+    # 2차 build_type 반영 (핵심만 추가)
+    # ------------------------------------------------
+    if build_type == "slim_build":
+        result["top"] += ["볼륨감 있는 셔츠", "텍스처 니트"]
+        result["bottom"] += ["세미와이드 팬츠"]
+        result["avoid"] += ["지나치게 마른 느낌을 강조하는 초슬림핏"]
+        result["fit"] += " 마른 체형은 지나치게 붙는 핏보다 적당한 볼륨이 있는 실루엣이 좋습니다."
+        result["extra_tip"] += "\n몸이 너무 얇아 보이지 않도록 레이어드와 텍스처를 활용하세요."
 
-    tips = [t for t in [recommendation["extra_tip"], proportion_tip, limb_tip] if t]
-    recommendation["extra_tip"] = "\n".join(tips)
+    elif build_type == "stocky_build":
+        result["top"] += ["세로 디테일 상의", "구조적인 셔츠 재킷"]
+        result["bottom"] += ["스트레이트 핏 팬츠"]
+        result["avoid"] += ["부피감을 과하게 키우는 두꺼운 오버핏", "상하의 모두 루즈한 실루엣"]
+        result["fit"] += " 체격감이 있는 경우 지나친 오버핏보다 정리된 실루엣이 더 안정적입니다."
+        result["extra_tip"] += "\n체격감이 있다면 부피를 더 키우기보다 세로선과 정돈된 라인으로 균형을 잡는 것이 좋습니다."
 
-    return recommendation
+    else:
+        result["extra_tip"] += "\n현재 체격감은 보통 수준으로 판단되어 기본 추천 방향을 유지해도 잘 어울립니다."
+
+    # ------------------------------------------------
+    # 3차 preferred_style 반영 (우선순위 높음)
+    # ------------------------------------------------
+    if preferred_style == "street":
+        # 기존 top/bottom을 완전히 덮진 않되, 스트릿 대표 아이템을 우선 배치
+        result["top"] = [
+            "그래픽 후드",
+            "워크 자켓",
+            "세로 디테일 상의",
+            *result["top"],
+        ]
+        result["bottom"] = [
+            "카고 팬츠",
+            "와이드 데님",
+            *result["bottom"],
+        ]
+        result["avoid"] += ["상하의 모두 과한 오버사이즈 스트릿 코디"]
+        if build_type == "stocky_build":
+            result["avoid"] += ["너무 부한 패딩"]
+        result["extra_tip"] += "\n스트릿 스타일은 볼륨감보다 실루엣 정리가 더 중요합니다."
+
+    elif preferred_style == "minimal":
+        result["top"] = [
+            "무지 셔츠",
+            "미니멀 블레이저",
+            "톤다운 니트",
+            *result["top"],
+        ]
+        result["bottom"] = [
+            "다크톤 슬랙스",
+            "군더더기 없는 스트레이트 팬츠",
+            *result["bottom"],
+        ]
+        result["extra_tip"] += "\n미니멀 스타일은 단순할수록 핏과 소재 정리가 중요합니다."
+
+    elif preferred_style == "casual":
+        result["top"] = [
+            "기본 맨투맨",
+            "캐주얼 셔츠",
+            *result["top"],
+        ]
+        result["bottom"] = [
+            "기본 데님",
+            "치노 팬츠",
+            *result["bottom"],
+        ]
+        result["extra_tip"] += "\n캐주얼 스타일은 편안함과 정돈된 실루엣의 균형이 중요합니다."
+
+    # ------------------------------------------------
+    # 4차 preferred_fit 반영
+    # ------------------------------------------------
+    if preferred_fit == "oversized":
+        result["top"] = ["박스핏 셔츠", *result["top"]]
+        result["bottom"] = ["와이드 스트레이트 팬츠", *result["bottom"]]
+        result["extra_tip"] += "\n오버사이즈를 선호하더라도 상하의 볼륨 균형을 맞추세요."
+        if build_type == "stocky_build":
+            result["avoid"] += ["극단적인 벌룬 실루엣"]
+
+    elif preferred_fit == "slim":
+        result["top"] = ["정돈된 실루엣의 셔츠", *result["top"]]
+        result["bottom"] = ["슬림 스트레이트 팬츠", *result["bottom"]]
+        result["extra_tip"] += "\n슬림핏은 지나치게 달라붙지 않게 약간의 여유를 남기는 것이 좋습니다."
+
+    elif preferred_fit == "loose":
+        result["top"] = ["루즈 셔츠", *result["top"]]
+        result["bottom"] = ["루즈 스트레이트 팬츠", *result["bottom"]]
+        result["extra_tip"] += "\n루즈핏은 편하지만 전체 라인이 흐트러지지 않게 정리해야 합니다."
+
+    elif preferred_fit == "regular":
+        result["top"] = ["기본 셔츠", "스탠다드 자켓", *result["top"]]
+        result["bottom"] = ["레귤러 스트레이트 팬츠", *result["bottom"]]
+        result["extra_tip"] += "\n레귤러핏은 가장 안정적이므로 소재와 색감으로 차별화를 주는 것이 좋습니다."
+
+    # ------------------------------------------------
+    # 5차 중복 제거
+    # ------------------------------------------------
+    result["top"] = list(dict.fromkeys(result["top"]))
+    result["bottom"] = list(dict.fromkeys(result["bottom"]))
+    result["avoid"] = list(dict.fromkeys(result["avoid"]))
+
+    # ------------------------------------------------
+    # 6차 개수 제한 (중요)
+    # ------------------------------------------------
+    result["top"] = result["top"][:5]
+    result["bottom"] = result["bottom"][:4]
+    result["avoid"] = result["avoid"][:4]
+
+    return result
