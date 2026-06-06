@@ -1,69 +1,71 @@
 CREATE DATABASE IF NOT EXISTS pcrs_db
 DEFAULT CHARACTER SET utf8mb4
-COLLATE utf8mb4_general_ci;
+DEFAULT COLLATE utf8mb4_general_ci;
 
 USE pcrs_db;
 
+-- 1. 세션 정보
 CREATE TABLE IF NOT EXISTS guest_session (
-    session_id VARCHAR(100) PRIMARY KEY,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    session_id VARCHAR(100) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (session_id)
 );
 
+-- 2. 신체 분석 결과
 CREATE TABLE IF NOT EXISTS body_analysis (
-    analysis_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT NOT NULL AUTO_INCREMENT,
     session_id VARCHAR(100) NOT NULL,
-
-    shoulder_width DOUBLE,
-    waist_width DOUBLE,
-    upper_body_length DOUBLE,
-    lower_body_length DOUBLE,
-    arm_length DOUBLE,
-    upper_lower_ratio DOUBLE,
-    shoulder_waist_ratio DOUBLE,
-    body_type VARCHAR(50),
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (session_id)
+    front_landmarks LONGTEXT,
+    side_landmarks LONGTEXT,
+    body_result LONGTEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_body_analysis_session
+        FOREIGN KEY (session_id)
         REFERENCES guest_session(session_id)
         ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS recommendation_result (
-    recommendation_id INT AUTO_INCREMENT PRIMARY KEY,
-    session_id VARCHAR(100) NOT NULL,
-    analysis_id INT NOT NULL,
-
-    recommended_style TEXT,
-    recommendation_reason TEXT,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (session_id)
-        REFERENCES guest_session(session_id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (analysis_id)
-        REFERENCES body_analysis(analysis_id)
-        ON DELETE CASCADE
+-- 3. 옷 라이브러리
+CREATE TABLE IF NOT EXISTS clothing_library (
+    id INT NOT NULL AUTO_INCREMENT,
+    item_type VARCHAR(20) NOT NULL,       -- top / bottom
+    item_name VARCHAR(100) NOT NULL,
+    brand VARCHAR(100),
+    color VARCHAR(50),
+    size_label VARCHAR(30),
+    image_path VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
 );
 
+-- 4. 피팅(합성) 결과
 CREATE TABLE IF NOT EXISTS fitting_result (
-    fitting_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT NOT NULL AUTO_INCREMENT,
     session_id VARCHAR(100) NOT NULL,
-    recommendation_id INT,
-
-    composite_image_path TEXT,
-    avatar_3d_path TEXT,
-    fitting_status VARCHAR(50),
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (session_id)
+    top_image_path VARCHAR(255),
+    bottom_image_path VARCHAR(255),
+    outfit_result_path VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_fitting_result_session
+        FOREIGN KEY (session_id)
         REFERENCES guest_session(session_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
 
-    FOREIGN KEY (recommendation_id)
-        REFERENCES recommendation_result(recommendation_id)
-        ON DELETE SET NULL
+-- 5. 추천 결과
+CREATE TABLE IF NOT EXISTS recommendation_result (
+    id INT NOT NULL AUTO_INCREMENT,
+    session_id VARCHAR(100) NOT NULL,
+    recommendation_text TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_recommendation_result_session
+        FOREIGN KEY (session_id)
+        REFERENCES guest_session(session_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
