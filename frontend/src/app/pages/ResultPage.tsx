@@ -241,7 +241,7 @@ export default function ResultPage() {
       <header className="border-b border-gray-200/50 bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <button
-            onClick={() => navigate('/home')}
+            onClick={() => window.open('http://localhost:5500/index.html', '_blank')}
             className="text-2xl font-light tracking-tight hover:opacity-70 transition-opacity"
           >
             FashionPeople
