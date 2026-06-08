@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fashion Avatar</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; font-family: 'Courier New', monospace; overflow: hidden; }
+    #canvas-container { position: fixed; inset: 0; }
+
+    /* ── UI 패널 ── */
+    #ui {
+      position: fixed; top: 24px; left: 24px;
+      width: 220px; display: none; flex-direction: column; gap: 10px; z-index: 10;
+      max-height: calc(100vh - 48px); overflow-y: auto;
+    }
+    #ui::-webkit-scrollbar { width: 3px; }
+    #ui::-webkit-scrollbar-thumb { background: #2a2040; border-radius: 2px; }
+    .panel {
+      background: rgba(10,10,20,0.88); border: 1px solid #1e1e2a;
+      border-radius: 10px; padding: 14px; backdrop-filter: blur(6px);
+    }
+    .panel-title {
+      font-size: 9px; letter-spacing: 0.18em; color: #555;
+      text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px;
+      border-bottom: 1px solid #1e1e2a;
+    }
+    .stat { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; }
+    .stat-k { color: #555; }
+    .stat-v { color: #c8b8ff; font-weight: bold; }
+
+    /* 아우핏 버튼 */
+    .outfit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .outfit-btn {
+      padding: 6px 4px; background: transparent;
+      border: 1px solid #1e1e2a; border-radius: 6px;
+      color: #555; font-size: 9px; cursor: pointer;
+      font-family: inherit; text-align: center; transition: all 0.15s;
+    }
+    .outfit-btn:hover { border-color: #3a3060; color: #c8b8ff; }
+    .outfit-btn.active { border-color: #7c6dba; color: #c8b8ff; background: rgba(124,109,186,0.15); }
+
+    /* 핏 판정 */
+    .fit-rec {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #1e1e2a;
+    }
+    .fit-rec-label { font-size: 9px; color: #555; letter-spacing: 0.1em; }
+    .fit-rec-size {
+      font-size: 18px; font-weight: bold; color: #c8b8ff;
+      background: rgba(124,109,186,0.15); border: 1px solid #7c6dba;
+      border-radius: 6px; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fit-parts { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+    .fit-part {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 10px; padding: 4px 6px; border-radius: 5px;
+      background: rgba(255,255,255,0.02); border: 1px solid #1a1a26;
+    }
+    .fit-part-label { color: #555; }
+    .fit-part-val { font-weight: bold; font-size: 10px; }
+    .fit-summary { font-size: 10px; text-align: center; padding: 5px; border-radius: 5px; background: rgba(255,255,255,0.02); }
+
+    /* 슬라이더 */
+    .slider-wrap { margin-bottom: 8px; }
+    .slider-label { display: flex; justify-content: space-between; font-size: 10px; color: #555; margin-bottom: 4px; }
+    .slider-label span:last-child { color: #a89ccc; }
+    input[type=range] {
+      width: 100%; height: 2px; -webkit-appearance: none;
+      background: #1e1e2a; border-radius: 1px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 10px; height: 10px;
+      border-radius: 50%; background: #7c6dba; cursor: pointer;
+    }
+
+    /* ── 온보딩 ── */
+    #onboarding {
+      position: fixed; inset: 0; background: #0a0a0f;
+      display: flex; align-items: center; justify-content: center; z-index: 200;
+      overflow-y: auto;
+    }
+    .ob-card {
+      background: rgba(14,14,26,0.97); border: 1px solid #1e1e2a;
+      border-radius: 16px; padding: 36px; width: 380px;
+      display: flex; flex-direction: column; gap: 18px;
+      margin: 24px auto;
+    }
+    .ob-title { font-size: 13px; letter-spacing: 0.2em; color: #7c6dba; text-transform: uppercase; }
+    .ob-label { font-size: 11px; color: #555; margin-bottom: 6px; letter-spacing: 0.1em; }
+    .ob-hint  { font-size: 10px; color: #333; margin-top: 3px; }
+    .ob-input {
+      width: 100%; padding: 10px 12px; background: #0e0e1a;
+      border: 1px solid #1e1e2a; border-radius: 8px; color: #e0e0e0;
+      font-size: 13px; font-family: inherit; outline: none;
+    }
+    .ob-input:focus { border-color: #7c6dba; }
+    .ob-row { display: flex; gap: 10px; }
+    .ob-row .ob-field { flex: 1; }
+    .gender-row { display: flex; gap: 10px; }
+    .gender-btn {
+      flex: 1; padding: 10px; background: transparent;
+      border: 1px solid #1e1e2a; border-radius: 8px; color: #555;
+      font-size: 11px; letter-spacing: 0.1em; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .gender-btn:hover { border-color: #3a3060; color: #c8b8ff; }
+    .gender-btn.selected { border-color: #7c6dba; color: #c8b8ff; background: rgba(124,109,186,0.12); }
+    .ob-divider { border: none; border-top: 1px solid #1a1a26; margin: 2px 0; }
+    .ob-submit {
+      width: 100%; padding: 12px; background: #7c6dba; border: none;
+      border-radius: 8px; color: #fff; font-size: 11px;
+      letter-spacing: 0.15em; cursor: pointer; font-family: inherit; transition: background 0.15s;
+    }
+    .ob-submit:hover { background: #5a4d9a; }
+    .ob-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── 로딩 ── */
+    #loading {
+      position: fixed; inset: 0; background: #0a0a0f; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; z-index: 100;
+    }
+    #loading.show { display: flex; }
+    #loading p { font-size: 10px; letter-spacing: 0.2em; color: #444; }
+    .bar { width: 120px; height: 1px; background: #1e1e2a; overflow: hidden; border-radius: 1px; }
+    .bar-fill { height: 100%; background: #7c6dba; width: 0; transition: width 0.4s ease; }
+
+    #hint {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; color: #2a2a3a; letter-spacing: 0.15em;
+      text-transform: uppercase; pointer-events: none;
+    }
+    #api-status {
+      position: fixed; top: 24px; right: 24px; font-size: 9px;
+      letter-spacing: 0.12em; color: #2a2a3a; text-transform: uppercase; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 온보딩 -->
+<div id="onboarding">
+  <div class="ob-card">
+    <div class="ob-title">Fashion Avatar</div>
+
+    <!-- 성별 -->
+    <div>
+      <div class="ob-label">성별</div>
+      <div class="gender-row">
+        <button class="gender-btn" id="btn-male">남성</button>
+        <button class="gender-btn" id="btn-female">여성</button>
+      </div>
+    </div>
+
+    <!-- 키 -->
+    <div>
+      <div class="ob-label">키 (cm)</div>
+      <input class="ob-input" type="number" id="height-input" placeholder="예: 175" min="140" max="210" />
+    </div>
+
+    <hr class="ob-divider">
+
+    <!-- 체형 3종 -->
+    <div>
+      <div class="ob-label">내 치수 입력</div>
+      <div class="ob-hint">줄자로 재거나 평소 사이즈표 참고해서 입력해요</div>
+    </div>
+
+    <div class="ob-row">
+      <div class="ob-field">
+        <div class="ob-label">어깨 너비 (cm)</div>
+        <input class="ob-input" type="number" id="shoulder-input" placeholder="예: 46" min="30" max="65" />
+      </div>
+      <div class="ob-field">
+        <div class="ob-label">가슴 둘레 (cm)</div>
+        <input class="ob-input" type="number" id="chest-input" placeholder="예: 100" min="60" max="140" />
+      </div>
+    </div>
+
+    <div>
+      <div class="ob-label">허리 둘레 (cm)</div>
+      <input class="ob-input" type="number" id="waist-input" placeholder="예: 82" min="50" max="130" />
+    </div>
+
+    <button class="ob-submit" id="ob-submit" disabled>아바타 생성 시작</button>
+  </div>
+</div>
+
+<!-- 로딩 -->
+<div id="loading">
+  <p id="load-text">LOADING...</p>
+  <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+</div>
+
+<!-- 3D 캔버스 -->
+<div id="canvas-container"></div>
+
+<!-- UI 패널 -->
+<div id="ui">
+
+  <!-- 내 체형 -->
+  <div class="panel">
+    <div class="panel-title">내 체형</div>
+    <div class="stat"><span class="stat-k">성별</span>  <span class="stat-v" id="ui-gender">—</span></div>
+    <div class="stat"><span class="stat-k">키</span>    <span class="stat-v" id="ui-height">—</span></div>
+    <div class="stat"><span class="stat-k">어깨</span>  <span class="stat-v" id="ui-shoulder">—</span></div>
+    <div class="stat"><span class="stat-k">가슴</span>  <span class="stat-v" id="ui-chest">—</span></div>
+    <div class="stat"><span class="stat-k">허리</span>  <span class="stat-v" id="ui-waist">—</span></div>
+    <div style="border-top:1px solid #1e1e2a; margin: 8px 0;"></div>
+    <div class="stat"><span class="stat-k">체형</span>  <span class="stat-v" id="ui-body-type">—</span></div>
+    <div class="stat"><span class="stat-k">비율</span>  <span class="stat-v" id="ui-proportion">—</span></div>
+  </div>
+
+  <!-- 아우핏 선택 -->
+  <div class="panel">
+    <div class="panel-title">아우핏 선택</div>
+    <div class="outfit-grid">
+      <button class="outfit-btn active" id="btn-outfit1">1</button>
+      <button class="outfit-btn"        id="btn-outfit2">2</button>
+      <button class="outfit-btn"        id="btn-outfit3">3</button>
+    </div>
+  </div>
+
+  <!-- 핏 판정 -->
+  <div class="panel">
+    <div class="panel-title">핏 판정</div>
+    <div class="fit-rec">
+      <div>
+        <div class="fit-rec-label">추천 사이즈</div>
+      </div>
+      <div class="fit-rec-size" id="fit-rec-size">—</div>
+    </div>
+    <div class="fit-parts">
+      <div class="fit-part" id="fit-shoulder">
+        <span class="fit-part-label">어깨</span>
+        <span class="fit-part-val" style="color:#555">—</span>
+      </div>
+      <div class="fit-part" id="fit-chest">
+        <span class="fit-part-label">가슴</span>
+        <span class="fit-part-val" style="color:#555">—</span>
+      </div>
+      <div class="fit-part" id="fit-waist">
+        <span class="fit-part-label">허리</span>
+        <span class="fit-part-val" style="color:#555">—</span>
+      </div>
+    </div>
+    <div class="fit-summary" id="fit-summary" style="color:#555">아우핏을 선택해주세요</div>
+  </div>
+
+  <!-- 투명도 -->
+  <div class="panel">
+    <div class="panel-title">투명도</div>
+    <div class="slider-wrap">
+      <div class="slider-label"><span>투명도</span><span id="op-out">100%</span></div>
+      <input type="range" id="op-slider" min="10" max="100" step="5" value="100">
+    </div>
+  </div>
+
+  <!-- 체형 미세조절 -->
+  <div class="panel">
+    <div class="panel-title">체형 미세조절</div>
+    <div class="slider-wrap">
+      <div class="slider-label"><span>어깨너비</span><span id="sh-out">1.0</span></div>
+      <input type="range" id="sh-slider" min="0.7" max="1.4" step="0.05" value="1.0">
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-label"><span>허리너비</span><span id="wa-out">1.0</span></div>
+      <input type="range" id="wa-slider" min="0.7" max="1.4" step="0.05" value="1.0">
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-label"><span>다리길이</span><span id="lg-out">1.0</span></div>
+      <input type="range" id="lg-slider" min="0.8" max="1.2" step="0.05" value="1.0">
+    </div>
+  </div>
+
+</div>
+
+<div id="api-status">● LOCAL MODE</div>
+<div id="hint">드래그 회전 &nbsp;·&nbsp; 스크롤 줌</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
