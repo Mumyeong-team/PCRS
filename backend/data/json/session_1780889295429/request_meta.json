@@ -1,0 +1,11 @@
+{
+  "gender": "male",
+  "height_cm": 170.0,
+  "weight_kg": 65.0,
+  "top_size": "M",
+  "bottom_size": "30",
+  "preferred_fit": "slim",
+  "preferred_style": "formal",
+  "provider": "openai",
+  "use_ai": false
+}

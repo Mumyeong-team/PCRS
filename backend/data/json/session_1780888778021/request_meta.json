@@ -1,0 +1,11 @@
+{
+  "gender": "male",
+  "height_cm": 170.0,
+  "weight_kg": 65.0,
+  "top_size": "XL",
+  "bottom_size": "32",
+  "preferred_fit": "regular",
+  "preferred_style": "street",
+  "provider": "openai",
+  "use_ai": false
+}

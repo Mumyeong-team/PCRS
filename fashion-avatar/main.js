@@ -1,12 +1,30 @@
 // ================================================================
-//  Fashion Avatar - main.js (localStorage 연동 버전)
+//  Fashion Avatar - main.js (URL 파라미터 연동 버전)
 // ================================================================
 
 let USER = { gender: null, height: null, shoulder: null, chest: null, waist: null };
 let SERVER_BODY_DATA = null;
 
-// ── localStorage에서 체형 데이터 읽기 ─────────────────────────
-function loadFromLocalStorage() {
+// ── URL 파라미터 또는 localStorage에서 체형 데이터 읽기 ────────
+function loadBodyData() {
+  // 1. URL 파라미터에서 먼저 시도 (?data=...)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('data');
+    if (encoded) {
+      const parsed = JSON.parse(decodeURIComponent(encoded));
+      const source =
+        parsed.body_analysis ? parsed :
+        parsed.apiResponse?.result ? parsed.apiResponse.result :
+        parsed.result ? parsed.result :
+        parsed.apiResponse;
+      if (source?.body_analysis) return source;
+    }
+  } catch (e) {
+    console.warn('[URL] 파싱 실패:', e);
+  }
+
+  // 2. localStorage에서 시도
   try {
     const stored = localStorage.getItem('analysisResult');
     if (!stored) return null;
@@ -16,12 +34,12 @@ function loadFromLocalStorage() {
       parsed.apiResponse?.result ? parsed.apiResponse.result :
       parsed.result ? parsed.result :
       parsed.apiResponse;
-    if (!source?.body_analysis) return null;
-    return source;
+    if (source?.body_analysis) return source;
   } catch (e) {
     console.warn('[localStorage] 파싱 실패:', e);
-    return null;
   }
+
+  return null;
 }
 
 function applyStoredData(source) {
@@ -155,7 +173,7 @@ function checkSubmit() {
 }
 
 function startApp() {
-  const stored = loadFromLocalStorage();
+  const stored = loadBodyData();
   if (stored) {
     applyStoredData(stored);
   } else {
@@ -235,7 +253,6 @@ function initScene() {
   rim.target.position.set(0, 1, 0);
   scene.add(rim); scene.add(rim.target);
 
-  // 바닥
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(4, 64),
     new THREE.MeshStandardMaterial({ color: 0x0e0e1a, roughness: 0.3, metalness: 0.2 })
@@ -448,8 +465,8 @@ function setLoadText(t) { const el = document.getElementById('load-text'); if (e
 function setBarWidth(p)  { const el = document.getElementById('bar-fill');  if (el) el.style.width = p + '%'; }
 function setApiStatus(cls, text) { const el = document.getElementById('api-status'); if (el) { el.className = cls; el.textContent = text; } }
 
-// ── DOM 이벤트 연결 ───────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── 이벤트 연결 + 자동 시작 ───────────────────────────────────
+function initEventListeners() {
   document.getElementById('btn-male')?.addEventListener('click',    () => selectGender('male'));
   document.getElementById('btn-female')?.addEventListener('click',  () => selectGender('female'));
   document.getElementById('ob-submit')?.addEventListener('click',   () => startApp());
@@ -463,9 +480,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ['height-input','shoulder-input','chest-input','waist-input'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', checkSubmit);
   });
+}
 
-  // localStorage 데이터 있으면 온보딩 스킵하고 바로 시작
-  const stored = loadFromLocalStorage();
+function tryAutoStart() {
+  const stored = loadBodyData();
   if (stored) {
     applyStoredData(stored);
     document.getElementById('onboarding').style.display = 'none';
@@ -474,4 +492,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setLoadText('체형 데이터 불러오는 중...');
     setTimeout(() => initScene(), 100);
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initEventListeners();
+    tryAutoStart();
+  });
+} else {
+  initEventListeners();
+  tryAutoStart();
+}

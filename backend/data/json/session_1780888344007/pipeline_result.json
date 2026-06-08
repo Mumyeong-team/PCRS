@@ -1,0 +1,56 @@
+{
+  "body_analysis": {
+    "gender": "male",
+    "body_type": "balanced",
+    "proportion": "balanced_proportion",
+    "limb_type": "balanced_limbs",
+    "build_type": "regular_build",
+    "shoulder_type": "balanced_shoulders",
+    "silhouette_type": "straight_shape"
+  },
+  "body_metrics": {
+    "shoulder_width": 0.2038,
+    "waist_width": 0.1579,
+    "hip_width": 0.1657,
+    "arm_length": 0.2609,
+    "upper_body_length": 0.2519,
+    "lower_body_length": 0.2499,
+    "leg_length_avg": 0.3827,
+    "upper_lower_ratio": 1.008,
+    "shoulder_waist_ratio": 1.2913
+  },
+  "style_recommendation": {
+    "top": [
+      "루즈 셔츠",
+      "다양한 핏의 상의 자유롭게 활용"
+    ],
+    "bottom": [
+      "루즈 스트레이트 팬츠",
+      "스트레이트 핏 팬츠",
+      "슬림 팬츠"
+    ],
+    "fit": "균형 잡힌 체형이므로 대부분의 스타일이 잘 어울립니다",
+    "avoid": [
+      "극단적인 오버핏과 슬림핏의 혼용"
+    ],
+    "extra_tip": "비율이 좋으니 트렌드 아이템을 부담 없이 시도해보세요.\n현재 체격감은 보통 수준으로 판단되어 기본 추천 방향을 유지해도 잘 어울립니다.\n루즈핏은 편하지만 전체 라인이 흐트러지지 않게 정리해야 합니다."
+  },
+  "ai_explanation": {
+    "summary": "",
+    "top_explanation": "",
+    "bottom_explanation": "",
+    "avoid_explanation": "",
+    "styling_tip": ""
+  },
+  "user_input": {
+    "gender": "male",
+    "height_cm": 170.0,
+    "weight_kg": 65.0,
+    "top_size": "L",
+    "bottom_size": "30",
+    "preferred_fit": "loose",
+    "preferred_style": "sporty"
+  },
+  "provider": "openai",
+  "use_ai": false
+}

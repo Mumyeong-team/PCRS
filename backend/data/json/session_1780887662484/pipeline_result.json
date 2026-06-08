@@ -1,0 +1,62 @@
+{
+  "body_analysis": {
+    "gender": "male",
+    "body_type": "balanced",
+    "proportion": "balanced_proportion",
+    "limb_type": "balanced_limbs",
+    "build_type": "slim_build",
+    "shoulder_type": "balanced_shoulders",
+    "silhouette_type": "straight_shape"
+  },
+  "body_metrics": {
+    "shoulder_width": 0.2038,
+    "waist_width": 0.1579,
+    "hip_width": 0.1657,
+    "arm_length": 0.2609,
+    "upper_body_length": 0.2519,
+    "lower_body_length": 0.2499,
+    "leg_length_avg": 0.3827,
+    "upper_lower_ratio": 1.008,
+    "shoulder_waist_ratio": 1.2913
+  },
+  "style_recommendation": {
+    "top": [
+      "기본 셔츠",
+      "스탠다드 자켓",
+      "무지 셔츠",
+      "미니멀 블레이저",
+      "톤다운 니트"
+    ],
+    "bottom": [
+      "레귤러 스트레이트 팬츠",
+      "다크톤 슬랙스",
+      "군더더기 없는 스트레이트 팬츠",
+      "스트레이트 핏 팬츠"
+    ],
+    "fit": "균형 잡힌 체형이므로 대부분의 스타일이 잘 어울립니다 마른 체형은 지나치게 붙는 핏보다 적당한 볼륨이 있는 실루엣이 좋습니다.",
+    "avoid": [
+      "극단적인 오버핏과 슬림핏의 혼용",
+      "지나치게 마른 느낌을 강조하는 초슬림핏"
+    ],
+    "extra_tip": "비율이 좋으니 트렌드 아이템을 부담 없이 시도해보세요.\n몸이 너무 얇아 보이지 않도록 레이어드와 텍스처를 활용하세요.\n미니멀 스타일은 단순할수록 핏과 소재 정리가 중요합니다.\n레귤러핏은 가장 안정적이므로 소재와 색감으로 차별화를 주는 것이 좋습니다."
+  },
+  "ai_explanation": {
+    "summary": "스타일 설명을 생성하지 못했습니다.",
+    "top_explanation": "",
+    "bottom_explanation": "",
+    "avoid_explanation": "",
+    "styling_tip": "",
+    "error": "[설정 오류] openai 패키지가 필요합니다. 설치: pip install openai"
+  },
+  "user_input": {
+    "gender": "male",
+    "height_cm": 180.0,
+    "weight_kg": 65.0,
+    "top_size": "S",
+    "bottom_size": "26",
+    "preferred_fit": "regular",
+    "preferred_style": "minimal"
+  },
+  "provider": "openai",
+  "use_ai": true
+}

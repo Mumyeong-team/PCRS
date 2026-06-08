@@ -1,0 +1,60 @@
+{
+  "body_analysis": {
+    "gender": "male",
+    "body_type": "balanced",
+    "proportion": "balanced_proportion",
+    "limb_type": "balanced_limbs",
+    "build_type": "slim_build",
+    "shoulder_type": "balanced_shoulders",
+    "silhouette_type": "straight_shape"
+  },
+  "body_metrics": {
+    "shoulder_width": 0.2038,
+    "waist_width": 0.1579,
+    "hip_width": 0.1657,
+    "arm_length": 0.2609,
+    "upper_body_length": 0.2519,
+    "lower_body_length": 0.2499,
+    "leg_length_avg": 0.3827,
+    "upper_lower_ratio": 1.008,
+    "shoulder_waist_ratio": 1.2913
+  },
+  "style_recommendation": {
+    "top": [
+      "정돈된 실루엣의 셔츠",
+      "다양한 핏의 상의 자유롭게 활용",
+      "볼륨감 있는 셔츠",
+      "텍스처 니트"
+    ],
+    "bottom": [
+      "슬림 스트레이트 팬츠",
+      "스트레이트 핏 팬츠",
+      "슬림 팬츠",
+      "세미와이드 팬츠"
+    ],
+    "fit": "균형 잡힌 체형이므로 대부분의 스타일이 잘 어울립니다 마른 체형은 지나치게 붙는 핏보다 적당한 볼륨이 있는 실루엣이 좋습니다.",
+    "avoid": [
+      "극단적인 오버핏과 슬림핏의 혼용",
+      "지나치게 마른 느낌을 강조하는 초슬림핏"
+    ],
+    "extra_tip": "비율이 좋으니 트렌드 아이템을 부담 없이 시도해보세요.\n몸이 너무 얇아 보이지 않도록 레이어드와 텍스처를 활용하세요.\n슬림핏은 지나치게 달라붙지 않게 약간의 여유를 남기는 것이 좋습니다."
+  },
+  "ai_explanation": {
+    "summary": "",
+    "top_explanation": "",
+    "bottom_explanation": "",
+    "avoid_explanation": "",
+    "styling_tip": ""
+  },
+  "user_input": {
+    "gender": "male",
+    "height_cm": 179.0,
+    "weight_kg": 65.0,
+    "top_size": "L",
+    "bottom_size": "32",
+    "preferred_fit": "slim",
+    "preferred_style": "formal"
+  },
+  "provider": "openai",
+  "use_ai": false
+}

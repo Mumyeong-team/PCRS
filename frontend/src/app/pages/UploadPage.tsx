@@ -31,17 +31,10 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false);
 
   const handleImageUpload = (type: 'front' | 'side', file: File) => {
-    setImageFiles((prev) => ({
-      ...prev,
-      [type]: file,
-    }));
-
+    setImageFiles((prev) => ({ ...prev, [type]: file }));
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImages((prev) => ({
-        ...prev,
-        [type]: e.target?.result as string,
-      }));
+      setImages((prev) => ({ ...prev, [type]: e.target?.result as string }));
     };
     reader.readAsDataURL(file);
   };
@@ -61,32 +54,19 @@ export default function UploadPage() {
     imageType: 'front' | 'side',
     file: File
   ) => {
-    const genderMap: Record<string, string> = {
-      남성: 'male',
-      여성: 'female',
-    };
-
+    const genderMap: Record<string, string> = { 남성: 'male', 여성: 'female' };
     const preferredFitMap: Record<string, string> = {
-      슬림: 'slim',
-      레귤러: 'regular',
-      루즈: 'loose',
-      오버사이즈: 'oversized',
+      슬림: 'slim', 레귤러: 'regular', 루즈: 'loose', 오버사이즈: 'oversized',
     };
-
     const preferredStyleMap: Record<string, string> = {
-      캐주얼: 'casual',
-      포멀: 'formal',
-      스트릿: 'street',
-      미니멀: 'minimal',
-      빈티지: 'vintage',
-      스포티: 'sporty',
+      캐주얼: 'casual', 포멀: 'formal', 스트릿: 'street',
+      미니멀: 'minimal', 빈티지: 'vintage', 스포티: 'sporty',
     };
 
     const data = new FormData();
     data.append('session_id', sessionId);
     data.append('image_type', imageType);
     data.append('file', file);
-
     data.append('gender', genderMap[formData.gender] || 'unspecified');
     data.append('height_cm', formData.height);
     data.append('weight_kg', formData.weight);
@@ -95,7 +75,7 @@ export default function UploadPage() {
     data.append('preferred_fit', preferredFitMap[formData.preferredFit] || '');
     data.append('preferred_style', preferredStyleMap[formData.preferredStyle] || '');
     data.append('provider', 'openai');
-    data.append('use_ai', 'true');
+    data.append('use_ai', 'false'); // 속도를 위해 AI 꺼둠
 
     const response = await fetch(`${API_BASE}/upload-image`, {
       method: 'POST',
@@ -115,21 +95,20 @@ export default function UploadPage() {
 
     try {
       setLoading(true);
-
       const sessionId = `session_${Date.now()}`;
 
       // 1) 정면 업로드
       await uploadSingleImage(sessionId, 'front', imageFiles.front);
 
-      // 2) 측면 업로드 → 여기서 최종 분석_complete 응답이 옴
+      // 2) 측면 업로드 → 최종 분석 결과
       const finalResponse = await uploadSingleImage(sessionId, 'side', imageFiles.side);
 
+      // 이미지 base64 제외하고 분석 결과만 저장 (용량 초과 방지)
       localStorage.setItem(
         'analysisResult',
         JSON.stringify({
           sessionId,
           userInput: formData,
-          images,
           apiResponse: finalResponse,
         })
       );
@@ -201,7 +180,7 @@ export default function UploadPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => e.target.files && handleImageUpload('front', e.target.files[0])}
+                    onChange={(e) => e.target.files?.[0] && handleImageUpload('front', e.target.files[0])}
                     className="hidden"
                     id="front-upload"
                   />
@@ -234,7 +213,7 @@ export default function UploadPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => e.target.files && handleImageUpload('side', e.target.files[0])}
+                    onChange={(e) => e.target.files?.[0] && handleImageUpload('side', e.target.files[0])}
                     className="hidden"
                     id="side-upload"
                   />
@@ -330,12 +309,7 @@ export default function UploadPage() {
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:outline-none transition-colors font-light bg-white"
                     >
                       <option value="">선택</option>
-                      <option value="XS">XS</option>
-                      <option value="S">S</option>
-                      <option value="M">M</option>
-                      <option value="L">L</option>
-                      <option value="XL">XL</option>
-                      <option value="XXL">XXL</option>
+                      {['XS','S','M','L','XL','XXL'].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div>
@@ -346,12 +320,7 @@ export default function UploadPage() {
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:outline-none transition-colors font-light bg-white"
                     >
                       <option value="">선택</option>
-                      <option value="26">26</option>
-                      <option value="28">28</option>
-                      <option value="30">30</option>
-                      <option value="32">32</option>
-                      <option value="34">34</option>
-                      <option value="36">36</option>
+                      {['26','28','30','32','34','36'].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
@@ -364,10 +333,7 @@ export default function UploadPage() {
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:outline-none transition-colors font-light bg-white"
                   >
                     <option value="">선택</option>
-                    <option value="슬림">슬림</option>
-                    <option value="레귤러">레귤러</option>
-                    <option value="루즈">루즈</option>
-                    <option value="오버사이즈">오버사이즈</option>
+                    {['슬림','레귤러','루즈','오버사이즈'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
 
@@ -379,12 +345,7 @@ export default function UploadPage() {
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:outline-none transition-colors font-light bg-white"
                   >
                     <option value="">선택</option>
-                    <option value="캐주얼">캐주얼</option>
-                    <option value="포멀">포멀</option>
-                    <option value="스트릿">스트릿</option>
-                    <option value="미니멀">미니멀</option>
-                    <option value="빈티지">빈티지</option>
-                    <option value="스포티">스포티</option>
+                    {['캐주얼','포멀','스트릿','미니멀','빈티지','스포티'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
