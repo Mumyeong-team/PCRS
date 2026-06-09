@@ -191,11 +191,11 @@ export default function ResultPage() {
   }, [analysisResult]);
 
   // 3D 코디 체험하기 버튼 핸들러
-  const handleOpen3DAvatar = () => {
-    const data = localStorage.getItem('analysisResult');
-    const encoded = encodeURIComponent(data || '');
-    window.open(`http://localhost:5500/fashion-avatar/index.html?data=${encoded}`, '_blank');
-  };
+ const handleOpen3DAvatar = () => {
+  const data = localStorage.getItem('analysisResult');
+  const encoded = encodeURIComponent(data || '');
+  window.open(`http://localhost:5500/index.html?data=${encoded}`, '_blank');
+};
 
   if (!uiData) {
     return (
