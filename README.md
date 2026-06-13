@@ -1,8 +1,6 @@
 <h1 align="center">👕 FashionPeople</h1>
 
-<p align="center">
-  <b>사진 속 체형 데이터를 기반으로 AI 스타일 추천과 3D 피팅을 연결하는 개인 맞춤형 패션 분석 시스템</b>
-</p>
+
 
 <p align="center">
   <img src="docs/preview.png" width="820" alt="FashionPeople Preview">
