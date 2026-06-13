@@ -1,1 +1,467 @@
 
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FashionPeople — 프로토타입 발표</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#ffffff; font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif; overflow:hidden; color:#111; }
+
+.deck { width:100vw; height:100vh; position:relative; }
+.slide {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:60px; opacity:0; pointer-events:none;
+  transition:opacity 0.5s ease, transform 0.5s ease;
+  transform:translateY(30px);
+}
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.slide.out { opacity:0; transform:translateY(-30px); }
+
+.nav {
+  position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:16px; z-index:100;
+}
+.dot { width:8px; height:8px; border-radius:50%; background:rgba(0,0,0,0.15); cursor:pointer; transition:all 0.3s; }
+.dot.active { background:#7c6dba; transform:scale(1.3); }
+.nav-btn {
+  background:rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.12);
+  color:#111; border-radius:8px; padding:8px 18px; cursor:pointer; font-size:13px;
+  transition:all 0.2s; font-family:inherit;
+}
+.nav-btn:hover { background:rgba(124,109,186,0.15); border-color:#7c6dba; }
+.slide-num { position:fixed; top:24px; right:32px; font-size:12px; color:rgba(0,0,0,0.25); letter-spacing:0.1em; z-index:100; }
+.key-hint { position:fixed; bottom:32px; right:32px; font-size:11px; color:rgba(0,0,0,0.2); letter-spacing:0.08em; }
+
+.tag { font-size:12px; color:#7c6dba; background:rgba(124,109,186,0.1); border:1px solid rgba(124,109,186,0.3); border-radius:20px; padding:4px 14px; margin-bottom:20px; letter-spacing:0.1em; }
+.title { font-size:52px; font-weight:700; line-height:1.2; text-align:center; margin-bottom:12px; color:#111; }
+.subtitle { font-size:20px; color:#7c6dba; text-align:center; margin-bottom:8px; }
+.desc { font-size:15px; color:rgba(0,0,0,0.45); text-align:center; line-height:1.7; }
+.section-title { font-size:36px; font-weight:700; margin-bottom:40px; align-self:flex-start; color:#111; }
+
+.cards { display:flex; gap:20px; width:100%; max-width:1100px; }
+.card { flex:1; background:#f8f8fc; border:1px solid rgba(0,0,0,0.08); border-radius:16px; padding:28px 24px; }
+.card.purple { border-color:rgba(124,109,186,0.35); background:#f5f3ff; }
+.card-icon { font-size:36px; margin-bottom:14px; }
+.card-title { font-size:17px; font-weight:700; margin-bottom:8px; color:#111; }
+.card-desc  { font-size:13px; color:rgba(0,0,0,0.5); line-height:1.6; }
+.card-tag   { font-size:11px; color:#7c6dba; margin-top:12px; background:rgba(124,109,186,0.12); padding:3px 10px; border-radius:10px; display:inline-block; }
+
+.big-stat { font-size:110px; font-weight:700; color:#7c6dba; line-height:1; }
+.big-label { font-size:18px; color:rgba(0,0,0,0.5); margin-top:8px; }
+
+.flow { display:flex; align-items:center; gap:12px; }
+.flow-box { background:#f5f3ff; border:1px solid rgba(124,109,186,0.3); border-radius:14px; padding:20px 18px; min-width:140px; text-align:center; }
+.flow-icon  { font-size:32px; margin-bottom:10px; }
+.flow-title { font-size:14px; font-weight:700; color:#7c6dba; }
+.flow-sub   { font-size:12px; color:rgba(0,0,0,0.4); margin-top:4px; }
+.flow-arrow { font-size:24px; color:#7c6dba; flex-shrink:0; }
+
+.tech-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; width:100%; max-width:1000px; }
+.tech-card { background:#f8f8fc; border:1px solid rgba(0,0,0,0.08); border-radius:14px; padding:20px; display:flex; align-items:center; gap:14px; }
+.tech-icon { font-size:28px; flex-shrink:0; }
+.tech-name { font-size:15px; font-weight:700; color:#7c6dba; }
+.tech-desc { font-size:12px; color:rgba(0,0,0,0.4); margin-top:3px; }
+
+.diff-cards { display:flex; gap:20px; width:100%; max-width:1000px; }
+.diff-card { flex:1; border-radius:16px; padding:32px 24px; text-align:center; background:#f8f8fc; }
+.diff-card.g { border:2px solid #3ab06a; }
+.diff-card.p { border:2px solid #7c6dba; }
+.diff-card.b { border:2px solid #4a7fc4; }
+.diff-num   { font-size:40px; font-weight:700; margin-bottom:12px; }
+.diff-title { font-size:17px; font-weight:700; margin-bottom:8px; color:#111; }
+.diff-desc  { font-size:13px; color:rgba(0,0,0,0.5); line-height:1.6; }
+
+.plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:900px; }
+.plan-card { background:#f8f8fc; border:1px solid rgba(0,0,0,0.08); border-radius:14px; padding:22px; display:flex; align-items:flex-start; gap:14px; }
+.plan-icon  { font-size:28px; flex-shrink:0; }
+.plan-title { font-size:15px; font-weight:700; color:#7c6dba; margin-bottom:5px; }
+.plan-desc  { font-size:12px; color:rgba(0,0,0,0.45); line-height:1.6; }
+
+.ch-cards { display:flex; gap:20px; width:100%; max-width:1100px; }
+.ch-card { flex:1; background:#f8f8fc; border-radius:16px; padding:28px 22px; }
+.ch-card.g { border:1px solid rgba(58,176,106,0.4); }
+.ch-card.p { border:1px solid rgba(124,109,186,0.4); }
+.ch-card.b { border:1px solid rgba(74,127,196,0.4); }
+.ch-icon  { font-size:32px; margin-bottom:12px; }
+.ch-title { font-size:16px; font-weight:700; margin-bottom:10px; }
+.ch-prob  { font-size:13px; color:rgba(0,0,0,0.45); margin-bottom:8px; line-height:1.5; }
+.ch-solve { font-size:13px; color:#3ab06a; font-weight:600; }
+
+.demo-list { display:flex; flex-direction:column; gap:16px; width:100%; max-width:700px; }
+.demo-item { background:#f8f8fc; border:1px solid rgba(0,0,0,0.08); border-radius:12px; padding:18px 22px; display:flex; align-items:center; gap:16px; }
+.demo-num { width:36px; height:36px; border-radius:50%; background:#7c6dba; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; flex-shrink:0; color:#fff; }
+.demo-text { font-size:15px; color:rgba(0,0,0,0.7); }
+
+.end-circle { width:280px; height:280px; border-radius:50%; border:1px solid rgba(124,109,186,0.4); background:rgba(124,109,186,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:32px; }
+
+.bg-glow { position:fixed; border-radius:50%; filter:blur(80px); pointer-events:none; z-index:0; }
+.bg-glow-1 { width:400px; height:400px; background:rgba(124,109,186,0.06); top:-100px; right:-100px; }
+.bg-glow-2 { width:300px; height:300px; background:rgba(106,204,143,0.05); bottom:-50px; left:-50px; }
+
+/* ── 문제 애니메이션 슬라이드 전용 ── */
+#s3 { padding:40px 60px; }
+.anim-wrap { width:100%; max-width:480px; background:#f4f4f8; border:1px solid rgba(0,0,0,0.1); border-radius:20px; overflow:hidden; flex-shrink:0; }
+.anim-scene { display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:28px 22px; min-height:290px; }
+.anim-scene.active { display:flex; }
+.anim-tag { font-size:11px; color:#888; background:#e8e8ef; padding:3px 12px; border-radius:20px; }
+.anim-char { font-size:60px; }
+.bounce { animation:bounce 1s infinite; }
+.shake  { animation:shake 0.4s infinite; }
+.spin-a { animation:spin  2s linear infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes shake  { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+@keyframes spin   { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.anim-bubble { background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:14px; padding:12px 18px; font-size:13px; color:#222; text-align:center; line-height:1.6; animation:fadeUp 0.4s ease; max-width:260px; }
+.anim-product { background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:12px; width:240px; animation:fadeUp 0.5s ease; }
+.sz-btn { padding:4px 10px; border:1px solid rgba(0,0,0,0.15); border-radius:6px; font-size:13px; color:#888; background:transparent; }
+.sz-btn.sel { background:#7c6dba; color:#fff; border-color:#7c6dba; }
+.anim-row { display:flex; gap:10px; animation:fadeUp 0.5s ease; }
+.anim-chip { padding:8px 14px; border-radius:10px; font-size:13px; text-align:center; line-height:1.5; }
+.anim-chip.gray  { background:#e8e8ef; color:#555; }
+.anim-chip.red   { background:#ffe8e8; color:#cc4444; }
+.anim-chip.green { background:#e8ffee; color:#2a8a50; }
+.pbar { width:160px; height:6px; background:#ddd; border-radius:3px; overflow:hidden; }
+.pbar-fill { height:100%; background:#7c6dba; border-radius:3px; }
+.anim-nav { display:flex; align-items:center; gap:10px; padding:12px 18px; border-top:1px solid rgba(0,0,0,0.08); background:#fff; }
+.anim-dot { width:8px; height:8px; border-radius:50%; background:rgba(0,0,0,0.12); transition:background 0.3s; }
+.anim-dot.active { background:#7c6dba; }
+.anim-step { font-size:12px; color:#aaa; }
+.anim-btn { padding:6px 14px; border-radius:8px; border:none; cursor:pointer; font-size:13px; font-family:inherit; transition:all 0.15s; }
+.anim-prev { background:#eee; color:#555; }
+.anim-prev:hover { background:#ddd; }
+.anim-next { background:#7c6dba; color:#fff; }
+.anim-next:hover { background:#5a4d9a; }
+
+.s3-right { display:flex; flex-direction:column; justify-content:center; gap:18px; max-width:460px; }
+.s3-right .big-title { font-size:30px; font-weight:700; line-height:1.3; color:#111; }
+.problem-point { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; background:#f8f8fc; border:1px solid rgba(0,0,0,0.07); border-radius:12px; }
+.pp-icon  { font-size:22px; flex-shrink:0; }
+.pp-title { font-size:14px; font-weight:700; color:#111; margin-bottom:3px; }
+.pp-text  { font-size:13px; color:rgba(0,0,0,0.5); line-height:1.5; }
+
+.solve-banner { margin-top:20px; width:100%; background:#f5f3ff; border:1px solid rgba(124,109,186,0.3); border-radius:12px; padding:12px 20px; text-align:center; font-size:14px; color:#7c6dba; font-weight:600; }
+
+@keyframes aFadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.slide.active .cards, .slide.active .flow, .slide.active .tech-grid,
+.slide.active .diff-cards, .slide.active .plan-grid,
+.slide.active .ch-cards, .slide.active .demo-list,
+.slide.active .s3-right, .slide.active .anim-wrap {
+  animation: aFadeUp 0.6s ease 0.2s both;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+<div class="slide-num" id="slideNum">1 / 11</div>
+<div class="key-hint">← → 방향키로 이동</div>
+
+<div class="deck">
+
+  <!-- 1. 표지 -->
+  <div class="slide active" id="s1">
+    <div class="tag">PROTOTYPE PRESENTATION</div>
+    <div class="title">FashionPeople</div>
+    <div class="subtitle">AI 기반 개인 의류 맞춤 서비스</div>
+    <div class="desc" style="margin-top:16px">사진 한 장으로, 내 체형에 딱 맞는 옷을.</div>
+  </div>
+
+  <!-- 2. 문제 제기 -->
+  <div class="slide" id="s2">
+    <div class="section-title">이런 경험, 있으신가요?</div>
+    <div class="cards" style="align-items:stretch">
+      <div class="card purple" style="flex:1.5">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,0.06)">
+            <span style="font-size:28px">😰</span>
+            <div><div style="font-size:14px;font-weight:700;color:#7c6dba;margin-bottom:3px">사이즈 고민</div><div style="font-size:12px;color:rgba(0,0,0,0.45)">M이 맞을까? L이 맞을까? 브랜드마다 달라서 헷갈려요</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,0.06)">
+            <span style="font-size:28px">📦</span>
+            <div><div style="font-size:14px;font-weight:700;color:#7c6dba;margin-bottom:3px">일단 주문</div><div style="font-size:12px;color:rgba(0,0,0,0.45)">에라 모르겠다, M으로 주문! 며칠을 기다렸는데...</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,0.06)">
+            <span style="font-size:28px">😭</span>
+            <div><div style="font-size:14px;font-weight:700;color:#cc4444;margin-bottom:3px">반품 신청</div><div style="font-size:12px;color:rgba(0,0,0,0.45)">어깨가 너무 작잖아!! 반품 배송비만 6,000원 손해</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card purple" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+        <div class="big-stat">70%</div>
+        <div class="big-label">온라인 의류 반품의</div>
+        <div style="font-size:20px;font-weight:700;margin-top:6px;color:#111">사이즈 불일치가 원인</div>
+        <div style="font-size:13px;color:rgba(0,0,0,0.4);margin-top:8px">연간 수조원 규모의 물류 낭비</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 문제 애니메이션 -->
+  <div class="slide" id="s3" style="flex-direction:row;gap:48px;justify-content:center;align-items:center">
+    <div class="anim-wrap">
+      <div class="anim-scene active" id="as1">
+        <span class="anim-tag">Scene 1 · 쇼핑 시작</span>
+        <div class="anim-char bounce">🧑</div>
+        <div class="anim-bubble">오 이 옷 너무 예쁘다!<br>사이즈가 뭐가 맞지...?</div>
+        <div class="anim-product">
+          <span style="font-size:32px">👕</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#111">베이직 티셔츠</div>
+            <div style="font-size:12px;color:#888;margin-top:2px">₩29,000</div>
+            <div style="display:flex;gap:4px;margin-top:6px">
+              <span class="sz-btn">S</span><span class="sz-btn sel">M</span><span class="sz-btn">L</span><span class="sz-btn">XL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="anim-scene" id="as2">
+        <span class="anim-tag">Scene 2 · 사이즈 고민</span>
+        <div class="anim-char shake">😰</div>
+        <div class="anim-bubble">나 평소에 M인데...<br>이 브랜드는 작게 나온다던데<br>L을 살까? M을 살까?</div>
+        <div class="anim-row">
+          <div class="anim-chip gray">M 사면<br>작을까? 😟</div>
+          <div class="anim-chip gray">L 사면<br>클까? 😟</div>
+        </div>
+      </div>
+      <div class="anim-scene" id="as3">
+        <span class="anim-tag">Scene 3 · 배송 기다리는 중</span>
+        <div class="anim-char bounce">🧑</div>
+        <div class="anim-bubble">일단 M으로 주문했다!<br>빨리 왔으면 좋겠다 🎉</div>
+        <div style="display:flex;align-items:center;gap:12px;animation:fadeUp 0.5s ease">
+          <div class="spin-a" style="font-size:40px">📦</div>
+          <div>
+            <div style="font-size:14px;color:#111;font-weight:500">배송중</div>
+            <div class="pbar" style="margin-top:6px"><div class="pbar-fill" style="width:75%"></div></div>
+            <div style="font-size:12px;color:#aaa;margin-top:4px">내일 도착 예정</div>
+          </div>
+        </div>
+      </div>
+      <div class="anim-scene" id="as4">
+        <span class="anim-tag">Scene 4 · 안 맞아!</span>
+        <div class="anim-char shake">😱</div>
+        <div class="anim-bubble">어깨가 너무 작잖아!!<br>역시 L을 살걸... 😭<br>반품해야겠다</div>
+        <div class="anim-row">
+          <div class="anim-chip red">😤 반품 신청</div>
+          <div class="anim-chip gray">배송비 왕복<br>₩6,000 손해</div>
+        </div>
+      </div>
+      <div class="anim-scene" id="as5">
+        <span class="anim-tag">Scene 5 · FashionPeople이 있었다면?</span>
+        <div style="font-size:52px;animation:bounce 0.8s infinite">✨</div>
+        <div class="anim-bubble" style="max-width:280px">
+          <strong style="color:#7c6dba">FashionPeople</strong>이 있었다면?<br>📸 사진 한 장으로 체형 분석<br>👗 3D 아바타로 직접 입어보기<br>✅ 딱 맞는 사이즈 추천!
+        </div>
+        <div class="anim-row">
+          <div class="anim-chip green">✓ 어깨 맞음</div>
+          <div class="anim-chip green">✓ M 추천</div>
+        </div>
+      </div>
+      <div class="anim-nav">
+        <div style="display:flex;gap:6px" id="adots">
+          <div class="anim-dot active"></div><div class="anim-dot"></div>
+          <div class="anim-dot"></div><div class="anim-dot"></div><div class="anim-dot"></div>
+        </div>
+        <span class="anim-step" id="astep">1 / 5</span>
+        <div style="flex:1"></div>
+        <button class="anim-btn anim-prev" onclick="aGo(-1)">◀</button>
+        <button class="anim-btn anim-next" id="anext" onclick="aGo(1)">다음 ▶</button>
+      </div>
+    </div>
+    <div class="s3-right">
+      <div class="big-title">실제로 이런<br>상황이 벌어집니다</div>
+      <div class="problem-point">
+        <div class="pp-icon">😰</div>
+        <div><div class="pp-title">사이즈 판단 불가</div><div class="pp-text">브랜드마다 달라서 내 사이즈를 알 수 없어요</div></div>
+      </div>
+      <div class="problem-point">
+        <div class="pp-icon">📦</div>
+        <div><div class="pp-title">묻지마 주문</div><div class="pp-text">결국 찍어서 주문하고 며칠을 기다려요</div></div>
+      </div>
+      <div class="problem-point">
+        <div class="pp-icon">💸</div>
+        <div><div class="pp-title">반품 = 돈 낭비</div><div class="pp-text">온라인 의류 반품의 70%가 사이즈 불일치 때문</div></div>
+      </div>
+      <div class="solve-banner">✨ FashionPeople이라면 이 모든 걸 해결합니다</div>
+    </div>
+  </div>
+
+  <!-- 4. 솔루션 -->
+  <div class="slide" id="s4">
+    <div class="section-title">FashionPeople이 해결합니다</div>
+    <div class="cards">
+      <div class="card purple" style="text-align:center">
+        <div class="card-icon">📸</div>
+        <div class="card-title">AI 체형 분석</div>
+        <div class="card-desc">사진 한 장으로<br>9가지 체형 수치 자동 측정<br>체형 타입 자동 분류</div>
+        <span class="card-tag">MediaPipe 기반</span>
+      </div>
+      <div class="card purple" style="text-align:center">
+        <div class="card-icon">🤖</div>
+        <div class="card-title">스타일 추천</div>
+        <div class="card-desc">체형 기반 상의/하의/핏<br>개인 맞춤 추천 제공<br>피해야 할 스타일도 안내</div>
+        <span class="card-tag">AI 추천 엔진</span>
+      </div>
+      <div class="card purple" style="text-align:center">
+        <div class="card-icon">👗</div>
+        <div class="card-title">3D 가상 피팅</div>
+        <div class="card-desc">아바타로 직접 입어보고<br>부위별 핏 판정<br>최적 사이즈 추천</div>
+        <span class="card-tag">Three.js 렌더링</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 서비스 흐름 -->
+  <div class="slide" id="s5">
+    <div class="section-title">서비스 흐름</div>
+    <div class="flow">
+      <div><div class="flow-box"><div class="flow-icon">📱</div><div class="flow-title">사진 업로드</div><div class="flow-sub">정면 + 측면</div></div></div>
+      <div class="flow-arrow">→</div>
+      <div><div class="flow-box"><div class="flow-icon">🔬</div><div class="flow-title">체형 분석</div><div class="flow-sub">MediaPipe</div></div></div>
+      <div class="flow-arrow">→</div>
+      <div><div class="flow-box"><div class="flow-icon">✨</div><div class="flow-title">스타일 추천</div><div class="flow-sub">AI 엔진</div></div></div>
+      <div class="flow-arrow">→</div>
+      <div><div class="flow-box"><div class="flow-icon">👗</div><div class="flow-title">3D 피팅</div><div class="flow-sub">Three.js</div></div></div>
+      <div class="flow-arrow">→</div>
+      <div><div class="flow-box"><div class="flow-icon">✅</div><div class="flow-title">사이즈 확정</div><div class="flow-sub">구매 결정</div></div></div>
+    </div>
+    <div style="margin-top:32px;font-size:18px;color:#7c6dba;font-weight:700">반품 없는 스마트한 쇼핑 경험</div>
+  </div>
+
+  <!-- 6. 기술 스택 -->
+  <div class="slide" id="s6">
+    <div class="section-title">기술 스택</div>
+    <div class="tech-grid">
+      <div class="tech-card"><div class="tech-icon">⚛️</div><div><div class="tech-name">React + TypeScript</div><div class="tech-desc">프론트엔드 UI</div></div></div>
+      <div class="tech-card"><div class="tech-icon">🐍</div><div><div class="tech-name">Python FastAPI</div><div class="tech-desc">백엔드 서버</div></div></div>
+      <div class="tech-card"><div class="tech-icon">👁️</div><div><div class="tech-name">MediaPipe</div><div class="tech-desc">체형 분석 AI</div></div></div>
+      <div class="tech-card"><div class="tech-icon">🎮</div><div><div class="tech-name">Three.js r128</div><div class="tech-desc">3D 렌더링</div></div></div>
+      <div class="tech-card"><div class="tech-icon">🗄️</div><div><div class="tech-name">MySQL</div><div class="tech-desc">데이터베이스</div></div></div>
+      <div class="tech-card"><div class="tech-icon">🎨</div><div><div class="tech-name">Blender + Mixamo</div><div class="tech-desc">3D 모델링</div></div></div>
+    </div>
+  </div>
+
+  <!-- 7. 시연 -->
+  <div class="slide" id="s7">
+    <div class="tag">LIVE DEMO</div>
+    <div class="title" style="font-size:42px;margin-bottom:32px">직접 시연해드리겠습니다 🎬</div>
+    <div class="demo-list">
+      <div class="demo-item"><div class="demo-num">1</div><div class="demo-text">사진 업로드 + 체형 정보 입력 → 분석 시작</div></div>
+      <div class="demo-item"><div class="demo-num">2</div><div class="demo-text">AI 체형 분석 결과 확인 (체형 타입 / 스타일 추천)</div></div>
+      <div class="demo-item"><div class="demo-num">3</div><div class="demo-text">3D 가상 피팅 체험 + 부위별 핏 판정 + 사이즈 추천</div></div>
+    </div>
+  </div>
+
+  <!-- 8. 어려웠던 점 -->
+  <div class="slide" id="s8">
+    <div class="section-title">개발하면서 어려웠던 점</div>
+    <div class="ch-cards">
+      <div class="ch-card g">
+        <div class="ch-icon">🧩</div>
+        <div class="ch-title" style="color:#2a8a50">3D 옷 뚫림 문제</div>
+        <div class="ch-prob">캐릭터 + 옷 분리 방식 시도했는데<br>옷이 계속 몸을 뚫고 나왔어요</div>
+        <div class="ch-solve">→ outfit 통째로 교체하는 방식으로 해결</div>
+      </div>
+      <div class="ch-card p">
+        <div class="ch-icon">🎨</div>
+        <div class="ch-title" style="color:#7c6dba">렌더링 퀄리티</div>
+        <div class="ch-prob">조명 설정 오류로 모델이<br>너무 평평하게 보였어요</div>
+        <div class="ch-solve">→ ACES 톤매핑 + 환경맵 IBL 적용으로 해결</div>
+      </div>
+      <div class="ch-card b">
+        <div class="ch-icon">🔗</div>
+        <div class="ch-title" style="color:#4a7fc4">페이지 간 데이터 연동</div>
+        <div class="ch-prob">다른 포트 실행으로<br>localStorage 공유가 불가했어요</div>
+        <div class="ch-solve">→ URL 파라미터 인코딩 방식으로 해결</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. 차별점 -->
+  <div class="slide" id="s9">
+    <div class="section-title">우리 서비스의 차별점</div>
+    <div class="diff-cards">
+      <div class="diff-card g">
+        <div class="diff-num" style="color:#3ab06a">01</div>
+        <div class="diff-title">사진 → 실제 체형 수치</div>
+        <div class="diff-desc">단순 사이즈 추천이 아닌<br>실제 신체 측정값 기반 분석</div>
+      </div>
+      <div class="diff-card p">
+        <div class="diff-num" style="color:#7c6dba">02</div>
+        <div class="diff-title">3D로 직접 입어보기</div>
+        <div class="diff-desc">텍스트 추천을 넘어<br>눈으로 확인하는 가상 피팅</div>
+      </div>
+      <div class="diff-card b">
+        <div class="diff-num" style="color:#4a7fc4">03</div>
+        <div class="diff-title">부위별 핏 판정</div>
+        <div class="diff-desc">어깨/가슴/허리 각각<br>맞음·타이트·헐렁 세분화</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. 향후 계획 -->
+  <div class="slide" id="s10">
+    <div class="section-title">향후 계획</div>
+    <div class="plan-grid">
+      <div class="plan-card"><div class="plan-icon">🛍️</div><div><div class="plan-title">실제 쇼핑몰 연동</div><div class="plan-desc">브랜드별 실제 사이즈 데이터 연동으로 정확도 향상</div></div></div>
+      <div class="plan-card"><div class="plan-icon">📱</div><div><div class="plan-title">모바일 앱 출시</div><div class="plan-desc">언제 어디서나 간편한 체형 분석 서비스 제공</div></div></div>
+      <div class="plan-card"><div class="plan-icon">🏪</div><div><div class="plan-title">오프라인 키오스크</div><div class="plan-desc">라즈베리파이 활용, 실제 매장 내 피팅 체험</div></div></div>
+      <div class="plan-card"><div class="plan-icon">🤝</div><div><div class="plan-title">브랜드 협업</div><div class="plan-desc">실제 패션 브랜드와 제휴해 상용 서비스 론칭</div></div></div>
+    </div>
+  </div>
+
+  <!-- 11. 마무리 -->
+  <div class="slide" id="s11">
+    <div class="end-circle">
+      <div style="font-size:32px;font-weight:700;margin-bottom:10px;color:#111">FashionPeople</div>
+      <div style="font-size:15px;color:#7c6dba;text-align:center;line-height:1.7;padding:0 20px">사진 한 장으로,<br>내 체형에 딱 맞는 옷을.</div>
+    </div>
+    <div style="font-size:28px;font-weight:700;margin-bottom:12px;color:#111">감사합니다 🙏</div>
+    <div style="font-size:15px;color:rgba(0,0,0,0.4)">질문이 있으시면 말씀해주세요</div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" onclick="go(-1)">◀</button>
+  <div id="dots" style="display:flex;gap:8px"></div>
+  <button class="nav-btn" onclick="go(1)">다음 ▶</button>
+</div>
+
+<script>
+const total=11; let cur=0;
+const dotsEl=document.getElementById('dots');
+for(let i=0;i<total;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>goTo(i); dotsEl.appendChild(d);
+}
+function goTo(n){
+  const slides=document.querySelectorAll('.slide');
+  slides[cur].classList.remove('active'); slides[cur].classList.add('out');
+  setTimeout(()=>slides[cur].classList.remove('out'),500);
+  cur=n; slides[cur].classList.add('active');
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+  document.getElementById('slideNum').textContent=(cur+1)+' / '+total;
+}
+function go(dir){ goTo((cur+dir+total)%total); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   go(-1);
+});
+let ac=0; const at=5;
+function aGo(dir){
+  document.getElementById('as'+(ac+1)).classList.remove('active');
+  ac=(ac+dir+at)%at;
+  document.getElementById('as'+(ac+1)).classList.add('active');
+  document.querySelectorAll('.anim-dot').forEach((d,i)=>d.classList.toggle('active',i===ac));
+  document.getElementById('astep').textContent=(ac+1)+' / '+at;
+  document.getElementById('anext').textContent=ac===at-1?'처음으로 ↩':'다음 ▶';
+}
+</script>
+</body>
+</html>
+
