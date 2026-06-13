@@ -404,25 +404,13 @@ PCRS/
 
 ## 11. 발표 자료 및 시연 영상
 
-발표 자료와 시연 영상은 `docs` 폴더에서 관리합니다.
-
-| 구분       | 파일                                          | 설명                                 |
-| -------- | ------------------------------------------- | ---------------------------------- |
-| 발표 자료    | [presentation.html](docs/presentation.html) | 프로젝트 발표용 HTML 슬라이드                 |
-| 시연 영상    | [demo-video.mp4](docs/demo-video.mp4)       | 서버 실행, 이미지 업로드, 체형 분석, 결과 확인 시연 영상 |
-| 미리보기 이미지 | [preview.png](docs/preview.png)             | README 상단에 표시되는 프로젝트 대표 이미지        |
-
 ### 발표 자료
 
-프로젝트 발표 자료는 아래 링크에서 확인할 수 있습니다.
-
-[발표 자료 보기](docs/presentation.html)
+[presentation.html](docs/presentation.html)
 
 ### 시연 영상
 
-구현 시연 영상은 아래 링크에서 확인할 수 있습니다.
-
-[시연 영상 보기](docs/demo-video.mp4)
+[demo-video.mp4](docs/demo-video.mp4)
 
 시연 영상에는 다음 흐름이 포함됩니다.
 
