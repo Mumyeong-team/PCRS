@@ -1,13 +1,14 @@
 // ================================================================
-//  Fashion Avatar - main.js (URL 파라미터 연동 버전)
+//  Fashion Avatar - main.js
+//  (URL 파라미터 연동 + 아바타 로드 + 체형 자동반영 + 핏 판정 고도화 +
+//   남녀 실측 사이즈표 반영 버전)
 // ================================================================
 
-let USER = { gender: null, height: null, shoulder: null, chest: null, waist: null };
+let USER = { gender: null, height: null, shoulder: null, chest: null, waist: null, legLength: null, preferredFit: null };
 let SERVER_BODY_DATA = null;
 
 // ── URL 파라미터 또는 localStorage에서 체형 데이터 읽기 ────────
 function loadBodyData() {
-  // 1. URL 파라미터에서 먼저 시도 (?data=...)
   try {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get('data');
@@ -24,7 +25,6 @@ function loadBodyData() {
     console.warn('[URL] 파싱 실패:', e);
   }
 
-  // 2. localStorage에서 시도
   try {
     const stored = localStorage.getItem('analysisResult');
     if (!stored) return null;
@@ -42,41 +42,59 @@ function loadBodyData() {
   return null;
 }
 
+// 정면 사진에서 잰 waist_width(몸통 가로 폭)는 실제 허리둘레보다 작게 나옴
+// (원통형 몸통을 정면에서만 봐서 "폭"만 측정되기 때문 — 둘레의 절반 정도)
+// 사이즈표는 실제 허리둘레 기준이라 보정 필요.
+// ⚠️ 아래 1.9는 추정치 — 실측 허리둘레(줄자)로 실제 테스트해서 정확한 계수로 다시 맞춰야 함
+const WAIST_CIRCUMFERENCE_FACTOR = 1.9;
+
 function applyStoredData(source) {
   if (!source) return;
   SERVER_BODY_DATA = source;
   const input   = source.user_input  ?? {};
   const metrics = source.body_metrics ?? {};
-  if (input.gender)    USER.gender   = input.gender;
-  if (input.height_cm) USER.height   = input.height_cm;
-  if (metrics.shoulder_width) USER.shoulder = Math.round(metrics.shoulder_width * 200);
-  if (metrics.waist_width)    USER.waist    = Math.round(metrics.waist_width    * 200);
-  USER.chest  = USER.shoulder ? Math.round(USER.shoulder * 2.1) : 100;
+
+  if (input.gender)        USER.gender       = input.gender;
+  if (input.height_cm)     USER.height       = input.height_cm;
+  if (input.preferred_fit) USER.preferredFit = input.preferred_fit;
+
+  const bodySpanNormalized = (metrics.upper_body_length || 0) + (metrics.leg_length_avg || 0);
+
+  if (bodySpanNormalized > 0 && USER.height) {
+    const scale = USER.height / bodySpanNormalized;
+    if (metrics.shoulder_width)  USER.shoulder  = Math.round(metrics.shoulder_width  * scale);
+    if (metrics.waist_width)     USER.waist     = Math.round(metrics.waist_width     * scale * WAIST_CIRCUMFERENCE_FACTOR);
+    if (metrics.leg_length_avg)  USER.legLength = Math.round(metrics.leg_length_avg  * scale);
+  }
+
+  USER.chest = USER.shoulder ? Math.round(USER.shoulder * 2.1) : 100;
   if (!USER.height) USER.height = 170;
   setApiStatus('ok', '● 체형 데이터 연동됨');
 }
 
-// ── 사이즈 스펙 ───────────────────────────────────────────────
-const OUTFIT_SPECS = {
-  outfit1: { sizes: {
-    S:  { shoulder: 44, chest: 96,  waist: 80 },
-    M:  { shoulder: 46, chest: 100, waist: 84 },
-    L:  { shoulder: 48, chest: 104, waist: 88 },
-    XL: { shoulder: 50, chest: 108, waist: 94 },
-  }},
-  outfit2: { sizes: {
-    S:  { shoulder: 43, chest: 94,  waist: 78 },
-    M:  { shoulder: 45, chest: 98,  waist: 82 },
-    L:  { shoulder: 47, chest: 102, waist: 86 },
-    XL: { shoulder: 49, chest: 106, waist: 92 },
-  }},
-  outfit3: { sizes: {
-    S:  { shoulder: 44, chest: 96,  waist: 76 },
-    M:  { shoulder: 46, chest: 100, waist: 80 },
-    L:  { shoulder: 48, chest: 104, waist: 84 },
-    XL: { shoulder: 50, chest: 108, waist: 90 },
-  }},
+// ── 공통 사이즈표 (남녀 구분) ────────────────────────────────
+// 무신사 스탠다드 실측 사이즈표 기준 (2026.09 확인)
+// - 남성: 릴렉스 핏 크루넥 티셔츠 + 데님 디테일 와이드 스웨트 팬츠
+// - 여성: 반소매 티셔츠 + 데님 팬츠
+// ⚠️ outfit1/2/3 구분 없이 모두 이 공통 기준 사용 (졸업작품 범위상 단순화)
+//    남성 S허리/여성 XL허리는 원본 표에 없어 인접 사이즈 간격으로 역산한 추정치
+const SIZE_CHART_MALE = {
+  S:  { shoulder: 49.5, chest: 106, waist: 68 },
+  M:  { shoulder: 51.5, chest: 111, waist: 73 },
+  L:  { shoulder: 53,   chest: 116, waist: 78 },
+  XL: { shoulder: 54.5, chest: 121, waist: 83 },
 };
+
+const SIZE_CHART_FEMALE = {
+  S:  { shoulder: 43,   chest: 98,  waist: 70 },
+  M:  { shoulder: 44.5, chest: 102, waist: 74 },
+  L:  { shoulder: 46,   chest: 107, waist: 78 },
+  XL: { shoulder: 47.5, chest: 112, waist: 82 },
+};
+
+function getSizeChart() {
+  return USER.gender === 'female' ? SIZE_CHART_FEMALE : SIZE_CHART_MALE;
+}
 
 const OUTFIT_LIST = {
   outfit1: { path: 'clothes/outfit1.glb' },
@@ -86,20 +104,86 @@ const OUTFIT_LIST = {
 
 const SIZE_SCALE = { S: 0.88, M: 0.95, L: 1.03, XL: 1.11 };
 
+// ── 아바타 기준 체형값 (레퍼런스) ────────────────────────────
+// ⚠️ 임시 추정치. avatar_male.glb / avatar_female.glb를 실측한 값으로 교체 필요
+const AVATAR_BASE_METRICS = {
+  male:   { shoulder: 45, waist: 82, legLength: 90 },
+  female: { shoulder: 40, waist: 72, legLength: 85 },
+};
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+// ── 체형 JSON → 본 스케일 자동 반영 ─────────────────────────────
+function applyBodyMetricsToBones(model, userData) {
+  if (!model || !userData?.shoulder || !userData?.waist) return;
+
+  const base = AVATAR_BASE_METRICS[userData.gender] || AVATAR_BASE_METRICS.male;
+
+  const shoulderRatio = clamp(userData.shoulder / base.shoulder, 0.85, 1.3);
+  const waistRatio    = clamp(userData.waist    / base.waist,    0.85, 1.3);
+  const legRatio      = userData.legLength
+    ? clamp(userData.legLength / base.legLength, 0.85, 1.3)
+    : 1;
+
+  model.traverse((node) => {
+    if (!node.isBone) return;
+    const n = node.name;
+
+    if (n === 'mixamorigLeftShoulder' || n === 'mixamorigRightShoulder' || n === 'mixamorigLeftArm' || n === 'mixamorigRightArm') {
+      node.scale.set(1, 1, shoulderRatio);
+    } else if (n === 'mixamorigSpine' || n === 'mixamorigSpine1' || n === 'mixamorigSpine2' || n === 'mixamorigHips') {
+      node.scale.set(waistRatio, 1, waistRatio);
+    } else if (n === 'mixamorigLeftUpLeg' || n === 'mixamorigRightUpLeg' || n === 'mixamorigLeftLeg' || n === 'mixamorigRightLeg') {
+      node.scale.set(1, legRatio, 1);
+    }
+    // 키는 본 스케일이 아니라 전체 model.scale(HEIGHT_SCALE)로 처리 (아래 loadAvatar/loadOutfit 참고)
+  });
+}
+
 // ── 핏 판정 ───────────────────────────────────────────────────
-function judgePartFit(userVal, clothVal) {
+
+// 부위별 "여유(ease)" 기준값
+// - 어깨: 거의 여유 없어야 핏이 삼 (허용 범위 좁음)
+// - 가슴/허리: 원래도 여유 있게 만드는 부위 (허용 범위 넓음)
+const FIT_THRESHOLDS = {
+  shoulder: { loose: -2, tight: 2 },
+  chest:    { loose: -6, tight: 4 },
+  waist:    { loose: -5, tight: 3 },
+};
+
+// 선호 핏(preferred_fit)에 따른 기준 보정
+// slim: 범위를 좁혀서(더 엄격하게) 판정, loose: 범위를 넓혀서 관대하게 판정
+function getAdjustedThreshold(part, preferredFit) {
+  const base = FIT_THRESHOLDS[part];
+  const adjust = {
+    slim:    { loose: +1.5, tight: -1.5 },
+    regular: { loose: 0,    tight: 0 },
+    loose:   { loose: -1.5, tight: +1.5 },
+  };
+  const a = adjust[preferredFit] || adjust.regular;
+  return {
+    loose: base.loose + a.loose,
+    tight: base.tight + a.tight,
+  };
+}
+
+function judgePartFit(userVal, clothVal, part, preferredFit) {
   const diff = userVal - clothVal;
-  if (diff < -4) return { label: '헐렁', icon: '↔', color: '#6a8fcc', score: -1 };
-  if (diff > 3)  return { label: '타이트', icon: '!', color: '#cc6a6a', score: 1 };
+  const { loose, tight } = getAdjustedThreshold(part, preferredFit);
+
+  if (diff < loose) return { label: '헐렁', icon: '↔', color: '#6a8fcc', score: -1 };
+  if (diff > tight) return { label: '타이트', icon: '!', color: '#cc6a6a', score: 1 };
   return              { label: '맞음', icon: '✓', color: '#6acc8f', score: 0 };
 }
 
 function getRecommendedSize(outfitKey) {
-  const spec = OUTFIT_SPECS[outfitKey];
+  const spec = getSizeChart();
   if (!spec || !USER.shoulder) return 'M';
   let bestSize = 'M', bestScore = Infinity;
   ['S','M','L','XL'].forEach(sz => {
-    const s = spec.sizes[sz];
+    const s = spec[sz];
     const score = Math.abs(USER.shoulder - s.shoulder) * 1.5
                 + Math.abs(USER.chest    - s.chest)
                 + Math.abs(USER.waist    - s.waist) * 0.8;
@@ -109,13 +193,16 @@ function getRecommendedSize(outfitKey) {
 }
 
 function updateFitUI() {
-  const spec = OUTFIT_SPECS[currentOutfitKey];
+  const spec = getSizeChart();
   if (!spec || !USER.shoulder) return;
+
   const recSize = getRecommendedSize(currentOutfitKey);
-  const s = spec.sizes[recSize];
-  const sh = judgePartFit(USER.shoulder, s.shoulder);
-  const ch = judgePartFit(USER.chest,    s.chest);
-  const wa = judgePartFit(USER.waist,    s.waist);
+  const s = spec[recSize];
+  const preferredFit = USER.preferredFit || 'regular';
+
+  const sh = judgePartFit(USER.shoulder, s.shoulder, 'shoulder', preferredFit);
+  const ch = judgePartFit(USER.chest,    s.chest,    'chest',    preferredFit);
+  const wa = judgePartFit(USER.waist,    s.waist,    'waist',    preferredFit);
 
   const recEl = document.getElementById('fit-rec-size');
   if (recEl) recEl.textContent = recSize;
@@ -135,16 +222,31 @@ function updateFitUI() {
   const scores = [sh.score, ch.score, wa.score];
   const tight  = scores.filter(s => s > 0).length;
   const loose  = scores.filter(s => s < 0).length;
+  const sizeOrder = ['S', 'M', 'L', 'XL'];
+  const recIndex = sizeOrder.indexOf(recSize);
   const msgEl  = document.getElementById('fit-summary');
+
   if (msgEl) {
     if (tight === 0 && loose === 0) {
-      msgEl.textContent = '전체적으로 딱 맞아요!'; msgEl.style.color = '#6acc8f';
+      msgEl.textContent = '전체적으로 딱 맞아요!';
+      msgEl.style.color = '#6acc8f';
     } else if (tight > loose) {
-      msgEl.textContent = `${recSize}보다 한 사이즈 크게 추천해요`; msgEl.style.color = '#cc6a6a';
+      if (recIndex === sizeOrder.length - 1) {
+        msgEl.textContent = `${recSize}가 이 라인 중 가장 큰 사이즈예요 (그래도 다소 타이트할 수 있어요)`;
+      } else {
+        msgEl.textContent = `${recSize}보다 한 사이즈 크게 추천해요`;
+      }
+      msgEl.style.color = '#cc6a6a';
     } else if (loose > tight) {
-      msgEl.textContent = `${recSize}보다 한 사이즈 작게 추천해요`; msgEl.style.color = '#6a8fcc';
+      if (recIndex === 0) {
+        msgEl.textContent = `${recSize}가 이 라인 중 가장 작은 사이즈예요 (그래도 다소 헐렁할 수 있어요)`;
+      } else {
+        msgEl.textContent = `${recSize}보다 한 사이즈 작게 추천해요`;
+      }
+      msgEl.style.color = '#6a8fcc';
     } else {
-      msgEl.textContent = `${recSize} 사이즈가 가장 잘 맞아요`; msgEl.style.color = '#c8b8ff';
+      msgEl.textContent = `${recSize} 사이즈가 가장 잘 맞아요`;
+      msgEl.style.color = '#c8b8ff';
     }
   }
 }
@@ -219,7 +321,6 @@ function initScene() {
   scene.environment = envTexture;
   pmremGenerator.dispose();
 
-  // 조명
   scene.add(new THREE.AmbientLight(0xffffff, 2.0));
 
   const key = new THREE.DirectionalLight(0xfff5ee, 3.0);
@@ -293,11 +394,46 @@ function onResize() {
   if (fxaaPass) fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
 }
 
+// ── Avatar (몸) ───────────────────────────────────────────────
+let currentAvatar = null;
+const HEIGHT_SCALE = () => (USER.height || 170) / 170;
+
+function loadAvatar(gender) {
+  // ⚠️ 실제 파일명 확인 필요: models/avatar.glb 인지, avatar_male.glb/avatar_female.glb 인지
+  const path = gender === 'female' ? 'models/avatar_female.glb' : 'models/avatar_male.glb';
+
+  new THREE.GLTFLoader().load(path, (gltf) => {
+    const model = gltf.scene;
+
+    model.traverse((node) => {
+      if (node.isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+      }
+    });
+
+    const targetH = HEIGHT_SCALE() * 1.8;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    if (size.y > 0.001) model.scale.setScalar(targetH / size.y);
+
+    const newBox = new THREE.Box3().setFromObject(model);
+    model.position.y = -newBox.min.y;
+
+    currentAvatar = model;
+    scene.add(model);
+
+    applyBodyMetricsToBones(model, USER);
+  },
+  null,
+  () => console.warn('❌ 아바타 glb 로드 실패 — 경로 확인 필요:', path));
+}
+
 // ── Outfit ────────────────────────────────────────────────────
 let currentOutfit    = null;
 let currentOutfitKey = 'outfit1';
 let clothOpacity     = 1.0;
-const HEIGHT_SCALE   = () => (USER.height || 170) / 170;
 
 function selectOutfit(key) {
   currentOutfitKey = key;
@@ -349,6 +485,9 @@ function loadOutfit(key) {
     model.position.y = -newBox.min.y;
     currentOutfit = model;
     scene.add(model);
+
+    // 옷도 몸과 같은 체형 비율로 자동 반영 (몸-옷 스켈레톤이 별개일 경우 대비)
+    applyBodyMetricsToBones(model, USER);
 
     updateBodyUI();
     updateFitUI();
@@ -404,6 +543,7 @@ function updateOpacity() {
   });
 }
 
+// 수동 슬라이더 (데모용 미세조정 — 자동반영과 별개로 유지)
 function onSliderChange() {
   const sh = parseFloat(document.getElementById('sh-slider').value);
   const wa = parseFloat(document.getElementById('wa-slider').value);
