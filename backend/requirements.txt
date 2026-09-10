@@ -2,5 +2,8 @@ fastapi
 uvicorn
 python-multipart
 opencv-python
-mediapipe
+mediapipe==0.10.14
 numpy
+rembg
+onnxruntime
+pymysql
