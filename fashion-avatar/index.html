@@ -3,195 +3,480 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fashion Avatar</title>
+  <title>FashionPeople — 3D 가상 피팅</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0f; font-family: 'Courier New', monospace; overflow: hidden; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: rgba(18,18,18,0.92);
+      --surface2: rgba(26,26,26,0.95);
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.12);
+      --accent: #ff3e6c;
+      --accent2: #ff6b6b;
+      --text: #ffffff;
+      --text2: rgba(255,255,255,0.5);
+      --text3: rgba(255,255,255,0.25);
+      --green: #00c853;
+      --blue: #2979ff;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+      color: var(--text);
+    }
+
     #canvas-container { position: fixed; inset: 0; }
 
-    /* ── UI 패널 ── */
+    /* ── 상단 헤더 ── */
+    #header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 56px;
+      background: rgba(13,13,13,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 20;
+    }
+    .header-logo {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .header-logo span { color: var(--accent); }
+    #api-status {
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.05em;
+    }
+    #hint {
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── 사이드 패널 ── */
     #ui {
-      position: fixed; top: 24px; left: 24px;
-      width: 220px; display: none; flex-direction: column; gap: 10px; z-index: 10;
-      max-height: calc(100vh - 48px); overflow-y: auto;
+      position: fixed;
+      top: 68px;
+      left: 16px;
+      width: 240px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      max-height: calc(100vh - 84px);
+      overflow-y: auto;
     }
-    #ui::-webkit-scrollbar { width: 3px; }
-    #ui::-webkit-scrollbar-thumb { background: #2a2040; border-radius: 2px; }
+    #ui::-webkit-scrollbar { width: 0; }
+
     .panel {
-      background: rgba(10,10,20,0.88); border: 1px solid #1e1e2a;
-      border-radius: 10px; padding: 14px; backdrop-filter: blur(6px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      backdrop-filter: blur(20px);
     }
+
     .panel-title {
-      font-size: 9px; letter-spacing: 0.18em; color: #555;
-      text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px;
-      border-bottom: 1px solid #1e1e2a;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 12px;
     }
-    .stat { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; }
-    .stat-k { color: #555; }
-    .stat-v { color: #c8b8ff; font-weight: bold; }
+
+    /* 체형 정보 */
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 12px;
+    }
+    .stat-k { color: var(--text2); font-weight: 400; }
+    .stat-v { color: var(--text); font-weight: 600; font-size: 12px; }
+    .stat-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 8px 0;
+    }
 
     /* 아우핏 버튼 */
-    .outfit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .outfit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     .outfit-btn {
-      padding: 6px 4px; background: transparent;
-      border: 1px solid #1e1e2a; border-radius: 6px;
-      color: #555; font-size: 9px; cursor: pointer;
-      font-family: inherit; text-align: center; transition: all 0.15s;
+      padding: 10px 4px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      transition: all 0.2s;
     }
-    .outfit-btn:hover { border-color: #3a3060; color: #c8b8ff; }
-    .outfit-btn.active { border-color: #7c6dba; color: #c8b8ff; background: rgba(124,109,186,0.15); }
+    .outfit-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(255,62,108,0.06);
+    }
+    .outfit-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(255,62,108,0.1);
+    }
 
     /* 핏 판정 */
     .fit-rec {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #1e1e2a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
     }
-    .fit-rec-label { font-size: 9px; color: #555; letter-spacing: 0.1em; }
+    .fit-rec-label { font-size: 11px; color: var(--text2); }
+    .fit-rec-sublabel { font-size: 10px; color: var(--text3); margin-top: 2px; }
     .fit-rec-size {
-      font-size: 18px; font-weight: bold; color: #c8b8ff;
-      background: rgba(124,109,186,0.15); border: 1px solid #7c6dba;
-      border-radius: 6px; width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(255,62,108,0.1);
+      border: 1px solid rgba(255,62,108,0.3);
+      border-radius: var(--radius-sm);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .fit-parts { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+
+    .fit-parts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
     .fit-part {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 10px; padding: 4px 6px; border-radius: 5px;
-      background: rgba(255,255,255,0.02); border: 1px solid #1a1a26;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
     }
-    .fit-part-label { color: #555; }
-    .fit-part-val { font-weight: bold; font-size: 10px; }
-    .fit-summary { font-size: 10px; text-align: center; padding: 5px; border-radius: 5px; background: rgba(255,255,255,0.02); }
+    .fit-part-label { color: var(--text2); font-weight: 400; }
+    .fit-part-val { font-weight: 600; font-size: 12px; }
+    .fit-summary {
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      color: var(--text2);
+      line-height: 1.4;
+    }
 
     /* 슬라이더 */
-    .slider-wrap { margin-bottom: 8px; }
-    .slider-label { display: flex; justify-content: space-between; font-size: 10px; color: #555; margin-bottom: 4px; }
-    .slider-label span:last-child { color: #a89ccc; }
+    .slider-wrap { margin-bottom: 10px; }
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .slider-label span:last-child { color: var(--text); font-weight: 500; }
     input[type=range] {
-      width: 100%; height: 2px; -webkit-appearance: none;
-      background: #1e1e2a; border-radius: 1px; outline: none;
+      width: 100%; height: 3px; -webkit-appearance: none;
+      background: rgba(255,255,255,0.1); border-radius: 2px; outline: none;
     }
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 10px; height: 10px;
-      border-radius: 50%; background: #7c6dba; cursor: pointer;
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--accent); cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(255,62,108,0.2);
     }
 
     /* ── 온보딩 ── */
     #onboarding {
-      position: fixed; inset: 0; background: #0a0a0f;
-      display: flex; align-items: center; justify-content: center; z-index: 200;
+      position: fixed; inset: 0;
+      background: #0d0d0d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
       overflow-y: auto;
     }
+
+    .ob-wrap {
+      display: flex;
+      width: 100%;
+      max-width: 900px;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 60px;
+    }
+
+    .ob-left {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+    }
+    @media (min-width: 768px) { .ob-left { display: flex; } }
+
+    .ob-brand {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .ob-brand span { color: var(--accent); }
+    .ob-tagline {
+      font-size: 15px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+    .ob-features { display: flex; flex-direction: column; gap: 16px; margin-top: 10px; }
+    .ob-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .ob-feature-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(255,62,108,0.1);
+      border: 1px solid rgba(255,62,108,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .ob-feature-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .ob-feature-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
     .ob-card {
-      background: rgba(14,14,26,0.97); border: 1px solid #1e1e2a;
-      border-radius: 16px; padding: 36px; width: 380px;
-      display: flex; flex-direction: column; gap: 18px;
-      margin: 24px auto;
+      background: rgba(22,22,22,0.95);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      backdrop-filter: blur(20px);
     }
-    .ob-title { font-size: 13px; letter-spacing: 0.2em; color: #7c6dba; text-transform: uppercase; }
-    .ob-label { font-size: 11px; color: #555; margin-bottom: 6px; letter-spacing: 0.1em; }
-    .ob-hint  { font-size: 10px; color: #333; margin-top: 3px; }
+
+    .ob-card-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .ob-card-sub { font-size: 13px; color: var(--text2); margin-top: -8px; }
+
+    .ob-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+    .ob-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
     .ob-input {
-      width: 100%; padding: 10px 12px; background: #0e0e1a;
-      border: 1px solid #1e1e2a; border-radius: 8px; color: #e0e0e0;
-      font-size: 13px; font-family: inherit; outline: none;
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
     }
-    .ob-input:focus { border-color: #7c6dba; }
+    .ob-input:focus { border-color: var(--accent); }
+    .ob-input::placeholder { color: var(--text3); }
+
     .ob-row { display: flex; gap: 10px; }
     .ob-row .ob-field { flex: 1; }
-    .gender-row { display: flex; gap: 10px; }
+
+    .gender-row { display: flex; gap: 8px; }
     .gender-btn {
-      flex: 1; padding: 10px; background: transparent;
-      border: 1px solid #1e1e2a; border-radius: 8px; color: #555;
-      font-size: 11px; letter-spacing: 0.1em; cursor: pointer;
-      font-family: inherit; transition: all 0.15s;
+      flex: 1; padding: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
     }
-    .gender-btn:hover { border-color: #3a3060; color: #c8b8ff; }
-    .gender-btn.selected { border-color: #7c6dba; color: #c8b8ff; background: rgba(124,109,186,0.12); }
-    .ob-divider { border: none; border-top: 1px solid #1a1a26; margin: 2px 0; }
+    .gender-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .gender-btn.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(255,62,108,0.08);
+    }
+
+    .ob-divider { border: none; border-top: 1px solid var(--border); }
+
     .ob-submit {
-      width: 100%; padding: 12px; background: #7c6dba; border: none;
-      border-radius: 8px; color: #fff; font-size: 11px;
-      letter-spacing: 0.15em; cursor: pointer; font-family: inherit; transition: background 0.15s;
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
     }
-    .ob-submit:hover { background: #5a4d9a; }
-    .ob-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ob-submit:hover { background: #e0365f; transform: translateY(-1px); }
+    .ob-submit:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
     /* ── 로딩 ── */
     #loading {
-      position: fixed; inset: 0; background: #0a0a0f; display: none;
-      flex-direction: column; align-items: center; justify-content: center;
-      gap: 14px; z-index: 100;
+      position: fixed; inset: 0;
+      background: #0d0d0d;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 100;
     }
     #loading.show { display: flex; }
-    #loading p { font-size: 10px; letter-spacing: 0.2em; color: #444; }
-    .bar { width: 120px; height: 1px; background: #1e1e2a; overflow: hidden; border-radius: 1px; }
-    .bar-fill { height: 100%; background: #7c6dba; width: 0; transition: width 0.4s ease; }
-
-    #hint {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      font-size: 10px; color: #2a2a3a; letter-spacing: 0.15em;
-      text-transform: uppercase; pointer-events: none;
+    .loading-logo { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .loading-logo span { color: var(--accent); }
+    #loading p { font-size: 12px; color: var(--text3); letter-spacing: 0.1em; }
+    .bar {
+      width: 160px; height: 2px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px; overflow: hidden;
     }
-    #api-status {
-      position: fixed; top: 24px; right: 24px; font-size: 9px;
-      letter-spacing: 0.12em; color: #2a2a3a; text-transform: uppercase; z-index: 10;
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0;
+      transition: width 0.4s ease;
+      border-radius: 2px;
     }
   </style>
 </head>
 <body>
 
+<!-- 헤더 -->
+<div id="header">
+  <div class="header-logo">Fashion<span>People</span></div>
+  <div id="hint">드래그 회전 &nbsp;·&nbsp; 스크롤 줌</div>
+  <div id="api-status">● LOCAL MODE</div>
+</div>
+
 <!-- 온보딩 -->
 <div id="onboarding">
-  <div class="ob-card">
-    <div class="ob-title">Fashion Avatar</div>
+  <div class="ob-wrap">
 
-    <!-- 성별 -->
-    <div>
-      <div class="ob-label">성별</div>
-      <div class="gender-row">
-        <button class="gender-btn" id="btn-male">남성</button>
-        <button class="gender-btn" id="btn-female">여성</button>
+    <!-- 왼쪽 브랜드 설명 -->
+    <div class="ob-left">
+      <div>
+        <div class="ob-brand">Fashion<span>People</span></div>
+        <div class="ob-tagline" style="margin-top:12px">사진 한 장으로 체형을 분석하고<br>3D 아바타로 옷을 직접 입혀보세요.</div>
+      </div>
+      <div class="ob-features">
+        <div class="ob-feature">
+          <div class="ob-feature-icon">📸</div>
+          <div>
+            <div class="ob-feature-title">AI 체형 분석</div>
+            <div class="ob-feature-desc">사진 한 장으로 어깨·허리·다리 등 9가지 체형 수치를 자동 측정해요.</div>
+          </div>
+        </div>
+        <div class="ob-feature">
+          <div class="ob-feature-icon">👗</div>
+          <div>
+            <div class="ob-feature-title">3D 가상 피팅</div>
+            <div class="ob-feature-desc">내 체형이 반영된 실사 아바타에 옷을 입혀보고 360도로 확인해요.</div>
+          </div>
+        </div>
+        <div class="ob-feature">
+          <div class="ob-feature-icon">✅</div>
+          <div>
+            <div class="ob-feature-title">부위별 핏 판정</div>
+            <div class="ob-feature-desc">어깨·가슴·허리 각각 맞음/타이트/헐렁을 알려주고 최적 사이즈를 추천해요.</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 키 -->
-    <div>
-      <div class="ob-label">키 (cm)</div>
-      <input class="ob-input" type="number" id="height-input" placeholder="예: 175" min="140" max="210" />
-    </div>
-
-    <hr class="ob-divider">
-
-    <!-- 체형 3종 -->
-    <div>
-      <div class="ob-label">내 치수 입력</div>
-      <div class="ob-hint">줄자로 재거나 평소 사이즈표 참고해서 입력해요</div>
-    </div>
-
-    <div class="ob-row">
-      <div class="ob-field">
-        <div class="ob-label">어깨 너비 (cm)</div>
-        <input class="ob-input" type="number" id="shoulder-input" placeholder="예: 46" min="30" max="65" />
+    <!-- 오른쪽 입력 카드 -->
+    <div class="ob-card">
+      <div>
+        <div class="ob-card-title">내 정보 입력</div>
+        <div class="ob-card-sub">정확한 핏 판정을 위해 치수를 입력해주세요</div>
       </div>
-      <div class="ob-field">
-        <div class="ob-label">가슴 둘레 (cm)</div>
-        <input class="ob-input" type="number" id="chest-input" placeholder="예: 100" min="60" max="140" />
+
+      <div>
+        <div class="ob-label">성별</div>
+        <div class="gender-row">
+          <button class="gender-btn" id="btn-male">남성</button>
+          <button class="gender-btn" id="btn-female">여성</button>
+        </div>
       </div>
+
+      <div>
+        <div class="ob-label">키 (cm)</div>
+        <input class="ob-input" type="number" id="height-input" placeholder="예: 175" min="140" max="210" />
+      </div>
+
+      <hr class="ob-divider">
+
+      <div>
+        <div class="ob-label">내 치수</div>
+        <div class="ob-hint">줄자로 재거나 평소 사이즈표를 참고해서 입력해요</div>
+      </div>
+
+      <div class="ob-row">
+        <div class="ob-field">
+          <div class="ob-label">어깨 너비 (cm)</div>
+          <input class="ob-input" type="number" id="shoulder-input" placeholder="46" min="30" max="65" />
+        </div>
+        <div class="ob-field">
+          <div class="ob-label">가슴 둘레 (cm)</div>
+          <input class="ob-input" type="number" id="chest-input" placeholder="100" min="60" max="140" />
+        </div>
+      </div>
+
+      <div>
+        <div class="ob-label">허리 둘레 (cm)</div>
+        <input class="ob-input" type="number" id="waist-input" placeholder="82" min="50" max="130" />
+      </div>
+
+      <button class="ob-submit" id="ob-submit" disabled>아바타 생성 시작 →</button>
     </div>
 
-    <div>
-      <div class="ob-label">허리 둘레 (cm)</div>
-      <input class="ob-input" type="number" id="waist-input" placeholder="예: 82" min="50" max="130" />
-    </div>
-
-    <button class="ob-submit" id="ob-submit" disabled>아바타 생성 시작</button>
   </div>
 </div>
 
 <!-- 로딩 -->
 <div id="loading">
-  <p id="load-text">LOADING...</p>
+  <div class="loading-logo">Fashion<span>People</span></div>
+  <p id="load-text">체형 데이터 불러오는 중...</p>
   <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
 </div>
 
@@ -204,23 +489,23 @@
   <!-- 내 체형 -->
   <div class="panel">
     <div class="panel-title">내 체형</div>
-    <div class="stat"><span class="stat-k">성별</span>  <span class="stat-v" id="ui-gender">—</span></div>
-    <div class="stat"><span class="stat-k">키</span>    <span class="stat-v" id="ui-height">—</span></div>
-    <div class="stat"><span class="stat-k">어깨</span>  <span class="stat-v" id="ui-shoulder">—</span></div>
-    <div class="stat"><span class="stat-k">가슴</span>  <span class="stat-v" id="ui-chest">—</span></div>
-    <div class="stat"><span class="stat-k">허리</span>  <span class="stat-v" id="ui-waist">—</span></div>
-    <div style="border-top:1px solid #1e1e2a; margin: 8px 0;"></div>
-    <div class="stat"><span class="stat-k">체형</span>  <span class="stat-v" id="ui-body-type">—</span></div>
-    <div class="stat"><span class="stat-k">비율</span>  <span class="stat-v" id="ui-proportion">—</span></div>
+    <div class="stat"><span class="stat-k">성별</span><span class="stat-v" id="ui-gender">—</span></div>
+    <div class="stat"><span class="stat-k">키</span><span class="stat-v" id="ui-height">—</span></div>
+    <div class="stat"><span class="stat-k">어깨</span><span class="stat-v" id="ui-shoulder">—</span></div>
+    <div class="stat"><span class="stat-k">가슴</span><span class="stat-v" id="ui-chest">—</span></div>
+    <div class="stat"><span class="stat-k">허리</span><span class="stat-v" id="ui-waist">—</span></div>
+    <hr class="stat-divider">
+    <div class="stat"><span class="stat-k">체형</span><span class="stat-v" id="ui-body-type">—</span></div>
+    <div class="stat"><span class="stat-k">비율</span><span class="stat-v" id="ui-proportion">—</span></div>
   </div>
 
   <!-- 아우핏 선택 -->
   <div class="panel">
     <div class="panel-title">아우핏 선택</div>
     <div class="outfit-grid">
-      <button class="outfit-btn active" id="btn-outfit1">1</button>
-      <button class="outfit-btn"        id="btn-outfit2">2</button>
-      <button class="outfit-btn"        id="btn-outfit3">3</button>
+      <button class="outfit-btn active" id="btn-outfit1">룩 1</button>
+      <button class="outfit-btn"        id="btn-outfit2">룩 2</button>
+      <button class="outfit-btn"        id="btn-outfit3">룩 3</button>
     </div>
   </div>
 
@@ -230,24 +515,25 @@
     <div class="fit-rec">
       <div>
         <div class="fit-rec-label">추천 사이즈</div>
+        <div class="fit-rec-sublabel">내 체형 기준</div>
       </div>
       <div class="fit-rec-size" id="fit-rec-size">—</div>
     </div>
     <div class="fit-parts">
       <div class="fit-part" id="fit-shoulder">
         <span class="fit-part-label">어깨</span>
-        <span class="fit-part-val" style="color:#555">—</span>
+        <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
       </div>
       <div class="fit-part" id="fit-chest">
         <span class="fit-part-label">가슴</span>
-        <span class="fit-part-val" style="color:#555">—</span>
+        <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
       </div>
       <div class="fit-part" id="fit-waist">
         <span class="fit-part-label">허리</span>
-        <span class="fit-part-val" style="color:#555">—</span>
+        <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
       </div>
     </div>
-    <div class="fit-summary" id="fit-summary" style="color:#555">아우핏을 선택해주세요</div>
+    <div class="fit-summary" id="fit-summary">아우핏을 선택해주세요</div>
   </div>
 
   <!-- 투명도 -->
@@ -278,9 +564,6 @@
 
 </div>
 
-<div id="api-status">● LOCAL MODE</div>
-<div id="hint">드래그 회전 &nbsp;·&nbsp; 스크롤 줌</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
@@ -292,5 +575,21 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="main.js"></script>
+
+<script>
+  // 헤더 표시 (ui와 같이 표시)
+  const origDisplay = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style');
+  const observer = new MutationObserver(() => {
+    const ui = document.getElementById('ui');
+    const header = document.getElementById('header');
+    if (ui && header) {
+      header.style.display = ui.style.display === 'flex' ? 'flex' : 'none';
+    }
+  });
+  window.addEventListener('load', () => {
+    const ui = document.getElementById('ui');
+    if (ui) observer.observe(ui, { attributes: true, attributeFilter: ['style'] });
+  });
+</script>
 </body>
 </html>

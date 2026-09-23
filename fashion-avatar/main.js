@@ -121,12 +121,11 @@ function applyBodyMetricsToBones(model, userData) {
 
   const base = AVATAR_BASE_METRICS[userData.gender] || AVATAR_BASE_METRICS.male;
 
-  const shoulderRatio = clamp(userData.shoulder / base.shoulder, 0.85, 1.3);
-  const waistRatio    = clamp(userData.waist    / base.waist,    0.85, 1.3);
+  const shoulderRatio = clamp(userData.shoulder / base.shoulder, 0.93, 1.07);
+  const waistRatio    = clamp(userData.waist    / base.waist,    0.93, 1.07);
   const legRatio      = userData.legLength
-    ? clamp(userData.legLength / base.legLength, 0.85, 1.3)
+    ? clamp(userData.legLength / base.legLength, 0.93, 1.07)
     : 1;
-
   model.traverse((node) => {
     if (!node.isBone) return;
     const n = node.name;
@@ -297,8 +296,9 @@ let scene, camera, renderer, composer;
 
 function initScene() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x111118);
-  scene.fog = new THREE.FogExp2(0x111118, 0.035);
+
+  // ── 배경: 밝은 스튜디오 그라데이션 ──
+  scene.background = new THREE.Color(0x1a1a2e);
 
   camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.2, 3.5);
@@ -311,60 +311,79 @@ function initScene() {
   renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
   renderer.outputEncoding    = THREE.sRGBEncoding;
   renderer.toneMapping       = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.3;
+  renderer.toneMappingExposure = 1.1;
   renderer.physicallyCorrectLights = true;
   document.getElementById('canvas-container').appendChild(renderer.domElement);
 
+  // ── 환경맵 (IBL) ──
   const pmremGenerator = new THREE.PMREMGenerator(renderer);
   pmremGenerator.compileEquirectangularShader();
-  const envTexture = pmremGenerator.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+  const envTexture = pmremGenerator.fromScene(new THREE.RoomEnvironment(), 0.08).texture;
   scene.environment = envTexture;
   pmremGenerator.dispose();
 
-  scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+  // ── 조명: 패션 스튜디오 느낌 ──
+  // 전체 환경광 (부드럽고 밝게)
+  scene.add(new THREE.AmbientLight(0xffffff, 1.8));
 
-  const key = new THREE.DirectionalLight(0xfff5ee, 3.0);
-  key.position.set(0, 8, 8);
+  // 메인 키 라이트 (위 정면 — 얼굴/몸 전체를 고르게)
+  const key = new THREE.DirectionalLight(0xffffff, 2.5);
+  key.position.set(0, 6, 6);
   key.target.position.set(0, 1, 0);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
-  key.shadow.camera.near = 0.5; key.shadow.camera.far = 25;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 20;
   key.shadow.camera.left = key.shadow.camera.bottom = -3;
   key.shadow.camera.right = key.shadow.camera.top   = 3;
-  key.shadow.bias = -0.0005; key.shadow.normalBias = 0.01;
+  key.shadow.bias = -0.0003; key.shadow.normalBias = 0.008;
   scene.add(key); scene.add(key.target);
 
-  const fill = new THREE.DirectionalLight(0xaaccff, 2.0);
-  fill.position.set(-6, 4, 4);
+  // 왼쪽 필 라이트 (그림자 완화)
+  const fill = new THREE.DirectionalLight(0xe8f0ff, 1.5);
+  fill.position.set(-5, 3, 3);
   fill.target.position.set(0, 1, 0);
   scene.add(fill); scene.add(fill.target);
 
-  const right = new THREE.DirectionalLight(0xffeedd, 1.5);
-  right.position.set(6, 4, 4);
+  // 오른쪽 보조 라이트
+  const right = new THREE.DirectionalLight(0xfff5e8, 1.2);
+  right.position.set(5, 3, 3);
   right.target.position.set(0, 1, 0);
   scene.add(right); scene.add(right.target);
 
-  const low = new THREE.DirectionalLight(0xffffff, 1.5);
-  low.position.set(0, 0, 6);
-  low.target.position.set(0, 0.5, 0);
-  scene.add(low); scene.add(low.target);
-
-  const rim = new THREE.DirectionalLight(0xffffff, 2.0);
-  rim.position.set(0, 6, -8);
+  // 림 라이트 (뒤에서 — 아바타 윤곽 살리기)
+  const rim = new THREE.DirectionalLight(0xffffff, 1.5);
+  rim.position.set(0, 5, -6);
   rim.target.position.set(0, 1, 0);
   scene.add(rim); scene.add(rim.target);
 
+  // 아래쪽 바운스 라이트 (발광 느낌)
+  const bounce = new THREE.DirectionalLight(0xf8f0ff, 0.8);
+  bounce.position.set(0, -1, 4);
+  bounce.target.position.set(0, 1, 0);
+  scene.add(bounce); scene.add(bounce.target);
+
+  // ── 바닥: 밝은 스튜디오 바닥 ──
   const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(4, 64),
-    new THREE.MeshStandardMaterial({ color: 0x0e0e1a, roughness: 0.3, metalness: 0.2 })
+    new THREE.CircleGeometry(6, 64),
+    new THREE.MeshStandardMaterial({
+      color: 0x0e0e1a,
+      roughness: 0.6,
+      metalness: 0.0,
+    })
   );
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
 
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(1.5, 1.52, 64),
-    new THREE.MeshBasicMaterial({ color: 0x2a2040, side: THREE.DoubleSide })
+  // 바닥 그림자 원 (발 아래 자연스러운 그라데이션)
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.6, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0xccccdd,
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide
+    })
   );
-  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.001; scene.add(ring);
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.001; scene.add(shadow);
 
   initPostProcessing();
   window.addEventListener('resize', onResize);
