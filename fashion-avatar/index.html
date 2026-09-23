@@ -511,29 +511,63 @@
 
   <!-- 핏 판정 -->
   <div class="panel">
-    <div class="panel-title">핏 판정</div>
-    <div class="fit-rec">
-      <div>
-        <div class="fit-rec-label">추천 사이즈</div>
-        <div class="fit-rec-sublabel">내 체형 기준</div>
+    <div class="panel-title">핏 판정 · 무신사 스탠다드 기준</div>
+
+    <!-- 현재 착용 옷 사이즈 추정 -->
+    <div style="font-size:10px;color:var(--text3);background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-bottom:12px;text-align:center" id="outfit-size-info">아우핏을 선택해주세요</div>
+
+    <!-- 상의 -->
+    <div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div style="font-size:10px;color:var(--text2);font-weight:500">상의 추천</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px" id="fit-top-cm">—</div>
+        </div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent);background:rgba(255,62,108,0.1);border:1px solid rgba(255,62,108,0.3);border-radius:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center" id="fit-top-size">—</div>
       </div>
-      <div class="fit-rec-size" id="fit-rec-size">—</div>
+      <div class="fit-parts">
+        <div class="fit-part" id="fit-shoulder">
+          <span class="fit-part-label">어깨</span>
+          <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
+        </div>
+        <div class="fit-part" id="fit-chest">
+          <span class="fit-part-label">가슴</span>
+          <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
+        </div>
+      </div>
+      <div class="fit-summary" id="fit-top-summary" style="color:var(--text2)">아우핏을 선택해주세요</div>
     </div>
-    <div class="fit-parts">
-      <div class="fit-part" id="fit-shoulder">
-        <span class="fit-part-label">어깨</span>
-        <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 12px">
+
+    <!-- 하의 -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div style="font-size:10px;color:var(--text2);font-weight:500">하의 추천</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px" id="fit-bottom-cm">—</div>
+        </div>
+        <div style="font-size:22px;font-weight:700;color:#2979ff;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);border-radius:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center" id="fit-bottom-size">—</div>
       </div>
-      <div class="fit-part" id="fit-chest">
-        <span class="fit-part-label">가슴</span>
-        <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
+      <div class="fit-parts">
+        <div class="fit-part" id="fit-waist">
+          <span class="fit-part-label">허리</span>
+          <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
+        </div>
       </div>
-      <div class="fit-part" id="fit-waist">
-        <span class="fit-part-label">허리</span>
-        <span class="fit-part-val" style="color:rgba(255,255,255,0.25)">—</span>
-      </div>
+      <div class="fit-summary" id="fit-bottom-summary" style="color:var(--text2)">아우핏을 선택해주세요</div>
     </div>
-    <div class="fit-summary" id="fit-summary">아우핏을 선택해주세요</div>
+  </div>
+
+  <!-- 핏 선호도 -->
+  <div class="panel">
+    <div class="panel-title">핏 선호도</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <button class="outfit-btn" id="fit-slim"    onclick="setFitPref('slim')">슬림</button>
+      <button class="outfit-btn active" id="fit-regular" onclick="setFitPref('regular')">레귤러</button>
+      <button class="outfit-btn" id="fit-loose"   onclick="setFitPref('loose')">루즈</button>
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center" id="fit-pref-desc">기본 핏 기준으로 판정해요</div>
   </div>
 
   <!-- 투명도 -->
@@ -542,23 +576,6 @@
     <div class="slider-wrap">
       <div class="slider-label"><span>투명도</span><span id="op-out">100%</span></div>
       <input type="range" id="op-slider" min="10" max="100" step="5" value="100">
-    </div>
-  </div>
-
-  <!-- 체형 미세조절 -->
-  <div class="panel">
-    <div class="panel-title">체형 미세조절</div>
-    <div class="slider-wrap">
-      <div class="slider-label"><span>어깨너비</span><span id="sh-out">1.0</span></div>
-      <input type="range" id="sh-slider" min="0.7" max="1.4" step="0.05" value="1.0">
-    </div>
-    <div class="slider-wrap">
-      <div class="slider-label"><span>허리너비</span><span id="wa-out">1.0</span></div>
-      <input type="range" id="wa-slider" min="0.7" max="1.4" step="0.05" value="1.0">
-    </div>
-    <div class="slider-wrap">
-      <div class="slider-label"><span>다리길이</span><span id="lg-out">1.0</span></div>
-      <input type="range" id="lg-slider" min="0.8" max="1.2" step="0.05" value="1.0">
     </div>
   </div>
 

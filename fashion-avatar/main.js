@@ -191,21 +191,99 @@ function getRecommendedSize(outfitKey) {
   return bestSize;
 }
 
+// 상의 사이즈: 어깨/가슴 기준
+function getRecommendedTopSize() {
+  const spec = getSizeChart();
+  if (!spec || !USER.shoulder) return 'M';
+  let bestSize = 'M', bestScore = Infinity;
+  ['S','M','L','XL'].forEach(sz => {
+    const s = spec[sz];
+    const score = Math.abs(USER.shoulder - s.shoulder) * 2.0
+                + Math.abs(USER.chest    - s.chest) * 1.0;
+    if (score < bestScore) { bestScore = score; bestSize = sz; }
+  });
+  return bestSize;
+}
+
+// 하의 사이즈: 허리 기준
+function getRecommendedBottomSize() {
+  const spec = getSizeChart();
+  if (!spec || !USER.waist) return 'M';
+  let bestSize = 'M', bestScore = Infinity;
+  ['S','M','L','XL'].forEach(sz => {
+    const s = spec[sz];
+    const score = Math.abs(USER.waist - s.waist);
+    if (score < bestScore) { bestScore = score; bestSize = sz; }
+  });
+  return bestSize;
+}
+
+// 아바타 기본 치수로 outfit 사이즈 추정
+function getOutfitSize() {
+  const base = AVATAR_BASE_METRICS[USER.gender || 'male'];
+  const spec = getSizeChart();
+  if (!spec || !base) return 'M';
+
+  // 상의 사이즈 추정 (어깨 기준)
+  let bestTopSize = 'M', bestTopScore = Infinity;
+  ['S','M','L','XL'].forEach(sz => {
+    const s = spec[sz];
+    const score = Math.abs(base.shoulder - s.shoulder) * 1.5
+                + Math.abs(base.waist    - s.waist)    * 0.8;
+    if (score < bestTopScore) { bestTopScore = score; bestTopSize = sz; }
+  });
+
+  // 하의 사이즈 추정 (허리 기준)
+  let bestBottomSize = 'M', bestBottomScore = Infinity;
+  ['S','M','L','XL'].forEach(sz => {
+    const s = spec[sz];
+    const score = Math.abs(base.waist - s.waist);
+    if (score < bestBottomScore) { bestBottomScore = score; bestBottomSize = sz; }
+  });
+
+  return { top: bestTopSize, bottom: bestBottomSize };
+}
+
 function updateFitUI() {
   const spec = getSizeChart();
   if (!spec || !USER.shoulder) return;
 
-  const recSize = getRecommendedSize(currentOutfitKey);
-  const s = spec[recSize];
   const preferredFit = USER.preferredFit || 'regular';
+  const sizeOrder = ['S', 'M', 'L', 'XL'];
 
-  const sh = judgePartFit(USER.shoulder, s.shoulder, 'shoulder', preferredFit);
-  const ch = judgePartFit(USER.chest,    s.chest,    'chest',    preferredFit);
-  const wa = judgePartFit(USER.waist,    s.waist,    'waist',    preferredFit);
+  // 상의/하의 사이즈 따로 계산
+  const topSize    = getRecommendedTopSize();
+  const bottomSize = getRecommendedBottomSize();
+  const topSpec    = spec[topSize];
+  const bottomSpec = spec[bottomSize];
+  const topIndex    = sizeOrder.indexOf(topSize);
+  const bottomIndex = sizeOrder.indexOf(bottomSize);
 
-  const recEl = document.getElementById('fit-rec-size');
-  if (recEl) recEl.textContent = recSize;
+  // 아바타 outfit 사이즈 추정
+  const outfitSize = getOutfitSize();
+  const outfitSizeEl = document.getElementById('outfit-size-info');
+  if (outfitSizeEl) {
+    outfitSizeEl.textContent = `현재 착용 옷 추정 사이즈 — 상의 약 ${outfitSize.top} / 하의 약 ${outfitSize.bottom}`;
+  }
 
+  // 부위별 핏 판정
+  const sh = judgePartFit(USER.shoulder, topSpec.shoulder,    'shoulder', preferredFit);
+  const ch = judgePartFit(USER.chest,    topSpec.chest,       'chest',    preferredFit);
+  const wa = judgePartFit(USER.waist,    bottomSpec.waist,    'waist',    preferredFit);
+
+  // 상의/하의 사이즈 표시
+  const topEl    = document.getElementById('fit-top-size');
+  const bottomEl = document.getElementById('fit-bottom-size');
+  if (topEl)    topEl.textContent    = topSize;
+  if (bottomEl) bottomEl.textContent = bottomSize;
+
+  // 실측 cm 표시
+  const topCmEl    = document.getElementById('fit-top-cm');
+  const bottomCmEl = document.getElementById('fit-bottom-cm');
+  if (topCmEl)    topCmEl.textContent    = `어깨 ${topSpec.shoulder}cm / 가슴 ${topSpec.chest}cm`;
+  if (bottomCmEl) bottomCmEl.textContent = `허리 ${bottomSpec.waist}cm`;
+
+  // 부위별 판정
   [
     { id: 'fit-shoulder', fit: sh, label: '어깨' },
     { id: 'fit-chest',    fit: ch, label: '가슴' },
@@ -218,36 +296,72 @@ function updateFitUI() {
     `;
   });
 
-  const scores = [sh.score, ch.score, wa.score];
-  const tight  = scores.filter(s => s > 0).length;
-  const loose  = scores.filter(s => s < 0).length;
-  const sizeOrder = ['S', 'M', 'L', 'XL'];
-  const recIndex = sizeOrder.indexOf(recSize);
-  const msgEl  = document.getElementById('fit-summary');
+  // 상의 요약 메시지
+  const topMsgEl = document.getElementById('fit-top-summary');
+  if (topMsgEl) {
+    const tightParts = [];
+    const looseParts = [];
+    if (sh.score > 0) tightParts.push('어깨');
+    if (ch.score > 0) tightParts.push('가슴');
+    if (sh.score < 0) looseParts.push('어깨');
+    if (ch.score < 0) looseParts.push('가슴');
 
-  if (msgEl) {
-    if (tight === 0 && loose === 0) {
-      msgEl.textContent = '전체적으로 딱 맞아요!';
-      msgEl.style.color = '#6acc8f';
-    } else if (tight > loose) {
-      if (recIndex === sizeOrder.length - 1) {
-        msgEl.textContent = `${recSize}가 이 라인 중 가장 큰 사이즈예요 (그래도 다소 타이트할 수 있어요)`;
-      } else {
-        msgEl.textContent = `${recSize}보다 한 사이즈 크게 추천해요`;
-      }
-      msgEl.style.color = '#cc6a6a';
-    } else if (loose > tight) {
-      if (recIndex === 0) {
-        msgEl.textContent = `${recSize}가 이 라인 중 가장 작은 사이즈예요 (그래도 다소 헐렁할 수 있어요)`;
-      } else {
-        msgEl.textContent = `${recSize}보다 한 사이즈 작게 추천해요`;
-      }
-      msgEl.style.color = '#6a8fcc';
+    if (tightParts.length > 0) {
+      const upSize = sizeOrder[topIndex + 1];
+      topMsgEl.style.color = '#cc6a6a';
+      topMsgEl.textContent = upSize
+        ? `${tightParts.join('/')}이 타이트해요 → ${upSize} 고려해보세요`
+        : `${tightParts.join('/')}이 다소 타이트할 수 있어요`;
+    } else if (looseParts.length > 0) {
+      const downSize = sizeOrder[topIndex - 1];
+      topMsgEl.style.color = '#6a8fcc';
+      topMsgEl.textContent = downSize
+        ? `${looseParts.join('/')}이 헐렁해요 → ${downSize} 고려해보세요`
+        : `전체적으로 딱 맞아요!`;
     } else {
-      msgEl.textContent = `${recSize} 사이즈가 가장 잘 맞아요`;
-      msgEl.style.color = '#c8b8ff';
+      topMsgEl.style.color = '#6acc8f';
+      topMsgEl.textContent = '상의 핏이 잘 맞아요!';
     }
   }
+
+  // 하의 요약 메시지
+  const bottomMsgEl = document.getElementById('fit-bottom-summary');
+  if (bottomMsgEl) {
+    if (wa.score > 0) {
+      const upSize = sizeOrder[bottomIndex + 1];
+      bottomMsgEl.style.color = '#cc6a6a';
+      bottomMsgEl.textContent = upSize
+        ? `허리가 타이트해요 → ${upSize} 고려해보세요`
+        : `허리가 다소 타이트할 수 있어요`;
+    } else if (wa.score < 0) {
+      const downSize = sizeOrder[bottomIndex - 1];
+      bottomMsgEl.style.color = '#6a8fcc';
+      bottomMsgEl.textContent = downSize
+        ? `허리가 헐렁해요 → ${downSize} 고려해보세요`
+        : `하의 핏이 잘 맞아요!`;
+    } else {
+      bottomMsgEl.style.color = '#6acc8f';
+      bottomMsgEl.textContent = '하의 핏이 잘 맞아요!';
+    }
+  }
+}
+
+// ── 핏 선호도 변경 ────────────────────────────────────────────
+function setFitPref(pref) {
+  USER.preferredFit = pref;
+  ['slim','regular','loose'].forEach(p => {
+    document.getElementById('fit-' + p)?.classList.toggle('active', p === pref);
+  });
+  const descEl = document.getElementById('fit-pref-desc');
+  if (descEl) {
+    const desc = {
+      slim:    '슬림하게 입는 기준으로 판정해요',
+      regular: '기본 핏 기준으로 판정해요',
+      loose:   '여유있게 입는 기준으로 판정해요',
+    };
+    descEl.textContent = desc[pref];
+  }
+  updateFitUI();
 }
 
 // ── 온보딩 ────────────────────────────────────────────────────
