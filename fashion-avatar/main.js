@@ -131,13 +131,13 @@ function applyBodyMetricsToBones(model, userData) {
     if (!node.isBone) return;
     const n = node.name;
 
-    if (n === 'mixamorigLeftShoulder' || n === 'mixamorigRightShoulder' || n === 'mixamorigLeftArm' || n === 'mixamorigRightArm') {
-      node.scale.set(1, 1, shoulderRatio);
-    } else if (n === 'mixamorigSpine' || n === 'mixamorigSpine1' || n === 'mixamorigSpine2' || n === 'mixamorigHips') {
-      node.scale.set(waistRatio, 1, waistRatio);
-    } else if (n === 'mixamorigLeftUpLeg' || n === 'mixamorigRightUpLeg' || n === 'mixamorigLeftLeg' || n === 'mixamorigRightLeg') {
-      node.scale.set(1, legRatio, 1);
-    }
+      if (n === 'LeftShoulder' || n === 'RightShoulder' || n === 'LeftArm' || n === 'RightArm') {
+    node.scale.set(1, 1, shoulderRatio);
+  } else if (n === 'Spine' || n === 'Spine1' || n === 'Spine2' || n === 'Hips') {
+    node.scale.set(waistRatio, 1, waistRatio);
+  } else if (n === 'LeftUpLeg' || n === 'RightUpLeg' || n === 'LeftLeg' || n === 'RightLeg') {
+    node.scale.set(1, legRatio, 1);
+  }
     // 키는 본 스케일이 아니라 전체 model.scale(HEIGHT_SCALE)로 처리 (아래 loadAvatar/loadOutfit 참고)
   });
 }
@@ -370,7 +370,8 @@ function initScene() {
   window.addEventListener('resize', onResize);
   initOrbitControls();
   animate();
-  loadOutfit('outfit1');
+  loadAvatar(USER.gender || 'male');
+  //loadOutfit('outfit1');
 }
 
 function initPostProcessing() {
@@ -422,6 +423,17 @@ function loadAvatar(gender) {
     model.position.y = -newBox.min.y;
 
     currentAvatar = model;
+    updateBodyUI();
+    updateFitUI();
+    setBarWidth(100);
+    setTimeout(() => {
+      document.getElementById('loading').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('loading').style.opacity = '1';
+        document.getElementById('ui').style.display = 'flex';
+      }, 500);
+    }, 300);
     scene.add(model);
 
     applyBodyMetricsToBones(model, USER);

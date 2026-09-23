@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Tuple
 from io import BytesIO
 
 from PIL import Image
-from rembg import remove
+try :
+    from rembg import remove
+except ImportError:
+    remove = None
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
