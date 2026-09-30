@@ -632,7 +632,7 @@ function loadOutfit(key) {
     if (maxDim > 0.001) model.scale.setScalar((targetH / maxDim) * sizeScale);
 
     const newBox = new THREE.Box3().setFromObject(model);
-    model.position.y = -newBox.min.y;
+    model.position.y = -newBox.min.y+0.07;
     currentOutfit = model;
     scene.add(model);
 
