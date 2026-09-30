@@ -1,0 +1,11 @@
+{
+  "gender": "male",
+  "height_cm": 185.0,
+  "weight_kg": 90.0,
+  "top_size": "XL",
+  "bottom_size": "36",
+  "preferred_fit": "oversized",
+  "preferred_style": "sporty",
+  "provider": "openai",
+  "use_ai": false
+}

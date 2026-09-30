@@ -97,9 +97,11 @@ function getSizeChart() {
 }
 
 const OUTFIT_LIST = {
-  outfit1: { path: 'clothes/outfit1.glb' },
-  outfit2: { path: 'clothes/outfit2.glb' },
-  outfit3: { path: 'clothes/outfit3.glb' },
+  outfit1: { pathM: 'models/avatar_male.glb',   pathF: 'models/avatar_female.glb',  label: '룩 1' },
+  outfit2: { pathM: 'models/male2.glb',          pathF: 'models/female2.glb',         label: '룩 2' },
+  outfit3: { pathM: 'models/male3.glb',          pathF: 'models/female3.glb',         label: '룩 3' },
+  outfit4: { pathM: 'models/male4.glb',          pathF: 'models/female4.glb',         label: '룩 4' },
+  outfit5: { pathM: 'models/male5.glb',          pathF: 'models/female5.glb',         label: '룩 5' },
 };
 
 const SIZE_SCALE = { S: 0.88, M: 0.95, L: 1.03, XL: 1.11 };
@@ -503,8 +505,8 @@ function initScene() {
   window.addEventListener('resize', onResize);
   initOrbitControls();
   animate();
-  loadAvatar(USER.gender || 'male');
-  //loadOutfit('outfit1');
+  // loadAvatar(USER.gender || 'male');  // outfit에 아바타+옷 포함됨
+  loadOutfit('outfit1');
 }
 
 function initPostProcessing() {
@@ -553,7 +555,7 @@ function loadAvatar(gender) {
     if (size.y > 0.001) model.scale.setScalar(targetH / size.y);
 
     const newBox = new THREE.Box3().setFromObject(model);
-    model.position.y = -newBox.min.y;
+    model.position.y = -newBox.min.y + 0.02;
 
     currentAvatar = model;
     updateBodyUI();
@@ -593,7 +595,10 @@ function loadOutfit(key) {
   if (!info) return;
   if (currentOutfit) { scene.remove(currentOutfit); currentOutfit = null; }
 
-  new THREE.GLTFLoader().load(info.path, (gltf) => {
+  // 성별에 따라 다른 경로 사용
+  const path = USER.gender === 'female' ? info.pathF : info.pathM;
+
+  new THREE.GLTFLoader().load(path, (gltf) => {
     const model = gltf.scene;
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
@@ -758,6 +763,8 @@ function initEventListeners() {
   document.getElementById('btn-outfit1')?.addEventListener('click', () => selectOutfit('outfit1'));
   document.getElementById('btn-outfit2')?.addEventListener('click', () => selectOutfit('outfit2'));
   document.getElementById('btn-outfit3')?.addEventListener('click', () => selectOutfit('outfit3'));
+  document.getElementById('btn-outfit4')?.addEventListener('click', () => selectOutfit('outfit4'));
+  document.getElementById('btn-outfit5')?.addEventListener('click', () => selectOutfit('outfit5'));
   document.getElementById('op-slider')?.addEventListener('input',   updateOpacity);
   document.getElementById('sh-slider')?.addEventListener('input',   onSliderChange);
   document.getElementById('wa-slider')?.addEventListener('input',   onSliderChange);
